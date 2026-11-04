@@ -6,8 +6,8 @@ __all__ = ["BasicPreprocessTypedWordsImagesDataset"]
 
 
 class BasicPreprocessTypedWordsImagesDataset(BasicPreprocessParent):
-    def __init__(self, typed_word_image_dataset_directory, preprocessed_data_directory, logger, seed):
-        super().__init__(typed_word_image_dataset_directory, preprocessed_data_directory, logger, seed)
+    def __init__(self, dataset_directory, preprocessed_data_directory, logger, seed):
+        super().__init__(dataset_directory, preprocessed_data_directory, logger, seed)
 
     def _load_data(self, data_file_path):
         return load_and_prepare_data(data_file_path)

@@ -85,7 +85,6 @@ CROSS_ENTROPY_LOSS = "cross_entropy"
 CTC_LOSS = "ctc_loss"
 FOCAL_LOSS = "focal_loss"
 
-
 ############################################ DATASETS ############################################
 TYPED_WORDS_IMAGES_DATASET_NAME = "typed_words_images"
 

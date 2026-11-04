@@ -19,7 +19,7 @@ def generate_data_labels_csv_file(data_names_list, labels_list, directory_to_sav
 
 
 def read_csv_file(csv_file_directory):
-    return pd.read_csv(csv_file_directory / DATA_LABELS_CSV_FILE_NAME, encoding="utf-8"), __DATA_COLUMN_NAME, __LABEL_COLUMN_NAME
+    return pd.read_csv(csv_file_directory / DATA_LABELS_CSV_FILE_NAME, encoding="utf-8")
 
 
 def get_data_label(data_path, labels_df):

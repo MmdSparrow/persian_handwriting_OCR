@@ -1,84 +1,26 @@
 import time
 from functools import wraps
 
-from analizer import (
-    AnalyzerFeatureExtractedDataPLI,
-    AnalyzerMODMARawAndPreprocessedData,
-    AnalyzerMUMTAZRawAndPreprocessedData,
-)
-from constants.common_constants import (
-    MODMA_DATASET_KAGGLE_VERSION_NAME,
-    MODMA_DATASET_NAME,
-    MUMTAZ_DATASET_KAGGLE_VERSION_NAME,
-    MUMTAZ_DATASET_NAME,
-    PIPELINE_PLI_NAME,
-    PIPELINE_RAW_EEG_NAME,
-)
-from preprocess import (
-    BasicPrepareMODMADataset,
-    BasicPrepareMUMTAZDataset,
-    BasicPreprocessMODMADataset,
-    BasicPreprocessMUMTAZDataset,
-    OneTimePreprocessTypedWordsImagesDataset,
-    OneTimePreprocessAndFeatureExtractionMUMTAZDataset,
-    OneTimePreprocessMODMAataset,
-    OneTimePreprocessMUMTAZDataset,
-)
+from constants.common_constants import TYPED_WORDS_IMAGES_DATASET_NAME
+from initial_preparation import InitialPreparationTypedWrdsImgesDatasets
+from preprocess import BasicPreprocessTypedWordsImagesDataset
 
 __all__ = [
-    "basic_preparation_class_selector",
-    "basic_preprocess_class_selector",
+    "initial_preparation_class_selector",
+    "log_seperate_line_decorator",
     "measure_runtime",
-    "one_time_preprocess_and_feature_extraction_class_selector",
-    "one_time_preprocess_class_selector",
-    "processed_data_analyzer_class_selector",
-    "raw_data_analyzer_class_selector",
 ]
 
 
-def raw_data_analyzer_class_selector(dataset_name):
-    if dataset_name == MODMA_DATASET_NAME or dataset_name == MODMA_DATASET_KAGGLE_VERSION_NAME:
-        return AnalyzerMODMARawAndPreprocessedData
-    if dataset_name == MUMTAZ_DATASET_NAME or dataset_name == MUMTAZ_DATASET_KAGGLE_VERSION_NAME:
-        return AnalyzerMUMTAZRawAndPreprocessedData
-    raise ValueError()
-
-
-def processed_data_analyzer_class_selector(pipeline_name):
-    if pipeline_name == PIPELINE_PLI_NAME:
-        return AnalyzerFeatureExtractedDataPLI
-    raise ValueError()
-
-
-def basic_preparation_class_selector(dataset_name):
-    if dataset_name == MODMA_DATASET_KAGGLE_VERSION_NAME:
-        return BasicPrepareMODMADataset
-    if dataset_name == MUMTAZ_DATASET_NAME or dataset_name == MUMTAZ_DATASET_KAGGLE_VERSION_NAME:
-        return BasicPrepareMUMTAZDataset
+def initial_preparation_class_selector(dataset_name):
+    if dataset_name == TYPED_WORDS_IMAGES_DATASET_NAME:
+        return InitialPreparationTypedWrdsImgesDatasets
     raise ValueError()
 
 
 def basic_preprocess_class_selector(dataset_name):
-    if dataset_name == MODMA_DATASET_KAGGLE_VERSION_NAME:
-        return BasicPreprocessMODMADataset
-    if dataset_name == MUMTAZ_DATASET_NAME or dataset_name == MUMTAZ_DATASET_KAGGLE_VERSION_NAME:
-        return BasicPreprocessMUMTAZDataset
-    raise ValueError()
-
-
-def one_time_preprocess_class_selector(dataset_name):
-    if dataset_name == MODMA_DATASET_KAGGLE_VERSION_NAME:
-        return OneTimePreprocessMODMAataset
-    if dataset_name == MUMTAZ_DATASET_NAME or dataset_name == MUMTAZ_DATASET_KAGGLE_VERSION_NAME:
-        return OneTimePreprocessMUMTAZDataset
-    raise ValueError()
-
-
-def one_time_preprocess_and_feature_extraction_class_selector(dataset_name):
-    if dataset_name == MODMA_DATASET_KAGGLE_VERSION_NAME:
-        return OneTimePreprocessTypedWordsImagesDataset
-    if dataset_name == MUMTAZ_DATASET_NAME or dataset_name == MUMTAZ_DATASET_KAGGLE_VERSION_NAME:
-        return OneTimePreprocessAndFeatureExtractionMUMTAZDataset
+    if dataset_name == TYPED_WORDS_IMAGES_DATASET_NAME:
+        return BasicPreprocessTypedWordsImagesDataset
     raise ValueError()
 
 

@@ -21,7 +21,7 @@ class TestMachineLearningParent(TestParent):
         super().__init__(dataset_root, logger, log_init_info)
 
     @staticmethod
-    def __read_processed_data_from_input_direcotry(data_directory):
+    def __read_preprocessed_data_from_input_direcotry(data_directory):
         samples_paths = sorted(Path(eeg_file) for eeg_file in data_directory.glob("*.npy"))
         data_list = []
         label_list = []
@@ -33,7 +33,7 @@ class TestMachineLearningParent(TestParent):
     def __prepare_data(self):
         test_data_directory = self.dataset_root / SPLIT_TEST_NAME
         _, self.__montage_name, self.__selected_channels, _, _ = load_dataset_metadata(self.dataset_root)
-        x_test, y_test = self.__read_processed_data_from_input_direcotry(test_data_directory)
+        x_test, y_test = self.__read_preprocessed_data_from_input_direcotry(test_data_directory)
         return x_test, y_test
 
     def test(

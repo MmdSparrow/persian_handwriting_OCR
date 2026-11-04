@@ -1,0 +1,14 @@
+.env
+.env/
+.cache/
+datasets/
+outputs/
+pyproject.toml
+
+___*___/
+
+main.py
+note.txt
+test.py
+test.ipynb
+test.txt

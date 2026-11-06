@@ -3,7 +3,6 @@ from torch.utils.data import DataLoader
 
 from constants.common_constants import SPLIT_TEST_NAME
 from data import DatasetParent
-from interpretability.integrated_gradients import compute_integrated_gradients
 from utils.experiment_utils.experiment_common_utils import (
     compute_prediction_based_scores,
     compute_probability_based_scores,
@@ -24,10 +23,6 @@ from utils.experiment_utils.gradient_descent_utils.test_gradient_descent_parent_
     generate_final_report,
     save_final_results,
 )
-from utils.preprocess_utils.feature_extraction_utils.hemisphere_separation_utils.hemiphere_separation_utils import (
-    concatenate_hemispharer_based_separated_channels,
-)
-from visualizer import VisualizerParent
 
 from ._test_parent import TestParent
 
@@ -37,15 +32,15 @@ __all__ = ["TestGradientDescentParent"]
 class TestGradientDescentParent(TestParent):
     def __init__(
         self,
-        dataset_root,
+        dataset_directory,
         logger,
         log_init_info,
     ):
-        super().__init__(dataset_root, logger, log_init_info)
+        super().__init__(dataset_directory, logger, log_init_info)
 
     def __prepare_data(self, batch_size, transform=None):
         dataset_test = DatasetParent(
-            root=self.dataset_root,
+            root=self.dataset_directory,
             split=SPLIT_TEST_NAME,
             transform=transform,
             augmentation=None,
@@ -137,7 +132,7 @@ class TestGradientDescentParent(TestParent):
             self._logger.info(f"Total parameters:     {total_params:,}")
             self._logger.info(f"Trainable parameters: {trainable_params:,}")
             self._logger.info("-" * 80)
-        
+
         test_function(
             model,
             dataloader_test,

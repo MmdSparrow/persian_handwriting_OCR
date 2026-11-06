@@ -6,8 +6,8 @@ from ._initial_preparation_parent import InitialPreparationParent
 class InitialPreparationTypedWrdsImgesDatasets(InitialPreparationParent):
     _DATASET_NAME = TYPED_WORDS_IMAGES_DATASET_NAME
 
-    def __init__(self, dataset_root_directory):
-        super().__init__(dataset_root_directory)
+    def __init__(self, dataset_directory):
+        super().__init__(dataset_directory)
 
     def _list_data_paths_and_labels(self):
         pass

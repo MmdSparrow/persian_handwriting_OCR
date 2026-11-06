@@ -11,14 +11,14 @@ from constants.base_directories_names_constants import (
 
 
 class BaseParent:
-    def __create_output_directory(self, output_directory):
-        if output_directory is None:
-            self._output_directory_name = datetime.today().strftime("%Y-%m-%d_%H-%M-%S")  # noqa: DTZ002
-            self._output_directory = OUTPUTS_MAIN_DIRECTORY_NAME / self._output_directory_name
+    def __create_outputs_directory(self, outputs_directory):
+        if outputs_directory is None:
+            self._outputs_directory_name = datetime.today().strftime("%Y-%m-%d_%H-%M-%S")  # noqa: DTZ002
+            self._outputs_directory = OUTPUTS_MAIN_DIRECTORY_NAME / self._outputs_directory_name
         else:
-            self._output_directory = Path(output_directory)
+            self._outputs_directory = Path(outputs_directory)
 
-        self._log_directory = self._output_directory / LOGS_DIRECTORY_NAME
+        self._log_directory = self._outputs_directory / LOGS_DIRECTORY_NAME
         os.makedirs(self._log_directory, exist_ok=True)
 
     def __init_logger(self, verbose):
@@ -34,6 +34,6 @@ class BaseParent:
                 console_handler.setFormatter(formatter)
                 self._logger.addHandler(console_handler)
 
-    def __init__(self, verbose=True, output_directory=None):
-        self.__create_output_directory(output_directory)
+    def __init__(self, verbose=True, outputs_directory=None):
+        self.__create_outputs_directory(outputs_directory)
         self.__init_logger(verbose)

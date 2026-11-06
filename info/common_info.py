@@ -1,4 +1,4 @@
-PERSIAN_ALPHABET_CHARACTERS = [
+PERSIAN_ALPHABETS_CHARACTERS = [
     "آ",
     "ا",
     "ب",
@@ -34,3 +34,5 @@ PERSIAN_ALPHABET_CHARACTERS = [
     "ی",
     "ئ",
 ]
+
+SPECIAL_CHARACTERS = ["-", " ", "S", "E"]

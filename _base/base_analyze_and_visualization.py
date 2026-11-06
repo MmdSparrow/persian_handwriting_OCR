@@ -13,25 +13,20 @@ __all__ = ["BaseAnalyzeAndVisualization"]
 
 
 class BaseAnalyzeAndVisualization(BaseParent):
-    def __init__(self, verbose=True, output_directory=None):
-        super().__init__(verbose, output_directory)
+    def __init__(self, verbose=True, outputs_directory=None):
+        super().__init__(verbose, outputs_directory)
 
     def __create_visualizations_directory(self):
-        self._results_directory = self._output_directory / RESULTS_DIRECTORY_NAME
+        self._results_directory = self._outputs_directory / RESULTS_DIRECTORY_NAME
         self._visulizations_directory = self._results_directory / VISUALIZATIONS_DIRECTORY_NAME
         os.makedirs(self._visulizations_directory, exist_ok=True)
 
     def __create_analyzes_directory(self):
-        self._analyzes_directory = self._output_directory / ANALYZE_DIRECTORY_NAME
+        self._analyzes_directory = self._outputs_directory / ANALYZE_DIRECTORY_NAME
         os.makedirs(self._analyzes_directory, exist_ok=True)
 
-    def __create_emtpy_split_directory(self, dataset_root_directory):
-        self._splited_data_directory = dataset_root_directory / SPLITED_DATA_DIRECTORY_NAME
-        os.makedirs(self._splited_data_directory, exist_ok=True)
-
-    def create_required_analyze_raw_and_preprocessed_data_directory(self, dataset_root_directory):
+    def create_required_analyze_raw_and_preprocessed_data_directory(self, dataset_directory):
         self.__create_analyzes_directory()
-        self.__create_emtpy_split_directory(dataset_root_directory)
 
     def create_required_analyze_feature_extracted_data_directory(self):
         self.__create_analyzes_directory()

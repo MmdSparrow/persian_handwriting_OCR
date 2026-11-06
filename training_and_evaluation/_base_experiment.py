@@ -19,7 +19,7 @@ class BaseExperiment:
                 self._logger.info("-" * 80)
             self._device = torch.device("cpu")
 
-    def __init__(self, dataset_root, logger, log_init_info):
-        self.dataset_root = dataset_root
+    def __init__(self, dataset_directory, logger, log_init_info):
+        self.dataset_directory = dataset_directory
         self._logger = logger
         self.__select_device(log_init_info)

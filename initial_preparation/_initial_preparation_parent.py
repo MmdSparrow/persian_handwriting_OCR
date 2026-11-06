@@ -8,9 +8,9 @@ from utils.load_and_store_dataset_labels_utils import generate_data_labels_csv_f
 class InitialPreparationParent(ABC):
     _DATASET_NAME = None
 
-    def __init__(self, dataset_root_directory):
+    def __init__(self, dataset_directory):
         super().__init__()
-        self._dataset_directory = dataset_root_directory
+        self._dataset_directory = dataset_directory
 
     @abstractmethod
     def _list_data_paths_and_labels(self):

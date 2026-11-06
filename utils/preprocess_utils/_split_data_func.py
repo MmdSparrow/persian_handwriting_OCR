@@ -1,66 +1,15 @@
-import json
-
 import numpy as np
 from sklearn.model_selection import LeaveOneOut, StratifiedKFold, train_test_split
 
-from constants.common_constants import SPLIT_TEST_NAME, SPLIT_TRAIN_AND_VALIDATION_NAME, SPLIT_TRAIN_NAME, SPLIT_VALIDATION_NAME
+from constants.common_constants import SPLIT_TRAIN_NAME, SPLIT_VALIDATION_NAME
 
 __all__ = [
     "split_test_and_others_func",
     "split_test_train_validation_func",
-    "store_train_validation_test_split_info",
     "stratified_folds_split_func",
 ]
 
-__SPLIT_INFO_FILE_NAME = "split_info.json"
-__FOLDS_INFO_FILE_NAME = "folds_info.json"
-
 __EQUAL_TO_ZERO_THRESHOLD = 1e-7
-
-
-def store_train_validation_test_split_info(
-    output_directory,
-    files_paths_train,
-    files_paths_validation,
-    files_paths_test,
-):
-    split_info_file_path = output_directory / __SPLIT_INFO_FILE_NAME
-    with open(split_info_file_path, "w") as f:
-        json.dump(
-            {
-                SPLIT_TEST_NAME: [str(x) for x in files_paths_test],
-                SPLIT_TRAIN_NAME: [str(x) for x in files_paths_train],
-                SPLIT_VALIDATION_NAME: [str(x) for x in files_paths_validation],
-            },
-            f,
-            indent=4,
-        )
-    return split_info_file_path
-
-
-def store_folds_info(
-    files_paths_train_and_validation,
-    files_paths_test,
-    folds,
-    output_directory,
-):
-    split_info_file_path = output_directory / __SPLIT_INFO_FILE_NAME
-    folds_info_file_path = output_directory / __FOLDS_INFO_FILE_NAME
-
-    with open(split_info_file_path, "w") as f:
-        json.dump(
-            {
-                SPLIT_TEST_NAME: [str(x) for x in files_paths_test],
-                SPLIT_TRAIN_AND_VALIDATION_NAME: [str(x) for x in files_paths_train_and_validation],
-            },
-            f,
-            indent=4,
-        )
-
-    with open(folds_info_file_path, "w") as f:
-        json.dump(folds, f, indent=4)
-
-    return folds_info_file_path, split_info_file_path
 
 
 def stratified_folds_split_func(

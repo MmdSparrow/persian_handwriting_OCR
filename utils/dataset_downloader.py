@@ -16,22 +16,22 @@ __TYPED_WORDS_IMAGES_DATASET_COUNT = 120000
 
 
 def donwload_dataset(dataset_name, colab_version=True):
-    dataset_root_directory = None
+    dataset_directory = None
     if colab_version:
-        dataset_root_directory = __DATASET_PATH_ON_COLAB
+        dataset_directory = __DATASET_PATH_ON_COLAB
     else:
-        dataset_root_directory = __DATASET_PATH_ON_LOCAL
-    os.makedirs(dataset_root_directory, exist_ok=True)
+        dataset_directory = __DATASET_PATH_ON_LOCAL
+    os.makedirs(dataset_directory, exist_ok=True)
 
     if dataset_name == TYPED_WORDS_IMAGES_DATASET_NAME:
-        __download_typed_words_images(dataset_root_directory)
+        __download_typed_words_images(dataset_directory)
     else:
         raise ValueError()
 
 
-def __download_typed_words_images(dataset_root_directory):
+def __download_typed_words_images(dataset_directory):
     __URL = "https://github.com/MmdSparrow/typed_words_images_dataset/raw/refs/heads/master/typed_words_images.tar.xz"
-    destination_dir = dataset_root_directory / TYPED_WORDS_IMAGES_DATASET_NAME
+    destination_dir = dataset_directory / TYPED_WORDS_IMAGES_DATASET_NAME
     destination_dir.mkdir(parents=True, exist_ok=True)
     archive_path = destination_dir / "typed_words_images.tar.xz"
     response = requests.get(__URL, stream=True)

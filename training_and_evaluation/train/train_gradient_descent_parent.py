@@ -13,7 +13,6 @@ from constants.common_constants import (
     SPLIT_VALIDATION_NAME,
 )
 from data import DatasetParent
-from interpretability.integrated_gradients import compute_integrated_gradients
 from utils.experiment_utils.experiment_common_utils import (
     compute_prediction_based_scores,
     compute_probability_based_scores,
@@ -39,10 +38,6 @@ from utils.experiment_utils.gradient_descent_utils.train_gradient_descent_parent
     save_final_results,
     scheduler_selector,
 )
-from utils.preprocess_utils.feature_extraction_utils.hemisphere_separation_utils.hemiphere_separation_utils import (
-    concatenate_hemispharer_based_separated_channels,
-)
-from visualizer import VisualizerParent
 
 from ._train_parent import TrainParent
 
@@ -50,14 +45,14 @@ __all__ = ["TrainGradientDescentParent"]
 
 
 class TrainGradientDescentParent(TrainParent):
-    def __init__(self, dataset_root, logger, log_init_info):
-        super().__init__(dataset_root, logger, log_init_info)
+    def __init__(self, dataset_directory, logger, log_init_info):
+        super().__init__(dataset_directory, logger, log_init_info)
         if log_init_info:
             self._logger.info("If model has `gradient_clip`, `weight_clip` or `initialize_weights` methods, they are called automatically")
 
     def __prepare_data(self, batch_size, transform=None, augmentation=None):
         dataset_train = DatasetParent(
-            root=self.dataset_root,
+            root=self.dataset_directory,
             split=SPLIT_TRAIN_NAME,
             transform=transform,
             augmentation=augmentation,
@@ -68,7 +63,7 @@ class TrainGradientDescentParent(TrainParent):
             shuffle=True,
         )
         dataset_validation = DatasetParent(
-            root=self.dataset_root,
+            root=self.dataset_directory,
             split=SPLIT_VALIDATION_NAME,
             transform=transform,
             augmentation=None,

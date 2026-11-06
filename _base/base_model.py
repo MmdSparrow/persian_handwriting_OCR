@@ -13,19 +13,19 @@ __all__ = ["BaseModel"]
 
 
 class BaseModel(BaseParent):
-    def __init__(self, output_directory, verbose=True):
-        super().__init__(verbose, output_directory)
+    def __init__(self, outputs_directory, verbose=True):
+        super().__init__(verbose, outputs_directory)
 
     def __create_results_directory(self, split_name):
-        self._results_directory = self._output_directory / RESULTS_DIRECTORY_NAME
+        self._results_directory = self._outputs_directory / RESULTS_DIRECTORY_NAME
         os.makedirs(self._results_directory / split_name, exist_ok=True)
 
     def __create_samples_directory(self, split_name):
-        self._samples_directory = self._output_directory / SAMPLES_DIRECTORY_NAME
+        self._samples_directory = self._outputs_directory / SAMPLES_DIRECTORY_NAME
         os.makedirs(self._samples_directory / split_name, exist_ok=True)
 
     def __create_checkpoint_directory(self):
-        self._checkpoint_directory = self._output_directory / CHECKPOINT_DIRECTORY_NAME
+        self._checkpoint_directory = self._outputs_directory / CHECKPOINT_DIRECTORY_NAME
         os.makedirs(self._checkpoint_directory, exist_ok=True)
 
     def create_train_neural_network_required_directories(self):

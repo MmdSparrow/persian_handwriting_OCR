@@ -1,9 +1,7 @@
-from .test import TestGradientDescentParent, TestMachineLearningParent
-from .train import TrainGradientDescentParent, TrainMachineLearningParent
+from .test import TestGradientDescentParent
+from .train import TrainGradientDescentParent
 
 __all__ = [
     "TestGradientDescentParent",
-    "TestMachineLearningParent",
     "TrainGradientDescentParent",
-    "TrainMachineLearningParent",
 ]

@@ -1,5 +1,6 @@
 import shutil
-from abc import ABC, abstractmethod
+
+import numpy as np
 
 from constants.base_directories_names_constants import DATASET_IMAGES_DIRECTORY_NAME
 from preprocess._preprocess_parent import PreprocessParent
@@ -11,13 +12,9 @@ from utils.preprocess_utils.preprocess_function import apply_preprocesses
 __all__ = ["BasicPreprocessParent"]
 
 
-class BasicPreprocessParent(ABC, PreprocessParent):
+class BasicPreprocessParent(PreprocessParent):
     def __init__(self, logger, seed):
         super().__init__(logger, seed)
-
-    @abstractmethod
-    def _load_data(self, data_file_path):
-        pass
 
     def apply_preprocesses(
         self,
@@ -30,7 +27,7 @@ class BasicPreprocessParent(ABC, PreprocessParent):
         self._log_dataset_info(self._CHANNELS_RESPONSIVE_TO_BLINKING, self._EOG_REMOVAL_ICA_N_COMPONENTS)
         self._log_preprocesses_info(chosen_preprocesses_list, **preprocesses_hyperparameters_kwargs)
         for data_file_path in list((dataset_directory / DATASET_IMAGES_DIRECTORY_NAME).iterdir()):
-            image = self._load_data(data_file_path)
+            image = np.load(data_file_path)
             image = apply_preprocesses(
                 image=image,
                 chosen_common_preprocesses_list=chosen_preprocesses_list,

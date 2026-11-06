@@ -3,7 +3,6 @@ from functools import wraps
 
 from constants.common_constants import TYPED_WORDS_IMAGES_DATASET_NAME
 from initial_preparation import InitialPreparationTypedWrdsImgesDatasets
-from preprocess import BasicPreprocessTypedWordsImagesDataset
 
 __all__ = [
     "initial_preparation_class_selector",
@@ -15,12 +14,6 @@ __all__ = [
 def initial_preparation_class_selector(dataset_name):
     if dataset_name == TYPED_WORDS_IMAGES_DATASET_NAME:
         return InitialPreparationTypedWrdsImgesDatasets
-    raise ValueError()
-
-
-def basic_preprocess_class_selector(dataset_name):
-    if dataset_name == TYPED_WORDS_IMAGES_DATASET_NAME:
-        return BasicPreprocessTypedWordsImagesDataset
     raise ValueError()
 
 

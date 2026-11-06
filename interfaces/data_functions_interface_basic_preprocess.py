@@ -1,6 +1,6 @@
 from _base import BaseData
+from preprocess import BasicPreprocessParent
 from utils.interfaces_utils import (
-    basic_preprocess_class_selector,
     initial_preparation_class_selector,
     measure_runtime,
 )
@@ -28,7 +28,6 @@ class DataFunctionsInterfaceBasicPreprocess(BaseData):
 
     @measure_runtime("Initial preparation")
     def restruct_dataset(self):
-        self.create_splits_directories()
         InitialPreparationClass = initial_preparation_class_selector(self.__dataset_name)
         initial_preparation = InitialPreparationClass(dataset_directory=self._dataset_directory)
         initial_preparation.restruct_dataset()
@@ -41,9 +40,8 @@ class DataFunctionsInterfaceBasicPreprocess(BaseData):
         preprocesses_hyperparameters_kwargs,
         delete_raw_data_files,
     ):
-        self.create_splits_directories()
-        BasicPreprocessClass = basic_preprocess_class_selector(self.__dataset_name)
-        basic_preprocess = BasicPreprocessClass(
+        self.create_preprocessed_data_required_directories()
+        basic_preprocess = BasicPreprocessParent(
             logger=self._logger,
             seed=self._seed,
         )
@@ -63,9 +61,7 @@ class DataFunctionsInterfaceBasicPreprocess(BaseData):
         test_ratio,
         validation_ratio,
     ):
-        self.create_splits_directories()
-        BasicPreprocessClass = basic_preprocess_class_selector(self.__dataset_name)
-        basic_preprocess = BasicPreprocessClass(
+        basic_preprocess = BasicPreprocessParent(
             logger=self._logger,
             seed=self._seed,
         )
@@ -87,9 +83,7 @@ class DataFunctionsInterfaceBasicPreprocess(BaseData):
         test_ratio,
         folds_num,
     ):
-        self.create_splits_directories()
-        BasicPreprocessClass = basic_preprocess_class_selector(self.__dataset_name)
-        basic_preprocess = BasicPreprocessClass(
+        basic_preprocess = BasicPreprocessParent(
             logger=self._logger,
             seed=self._seed,
         )

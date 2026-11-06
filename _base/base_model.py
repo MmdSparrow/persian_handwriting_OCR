@@ -35,11 +35,6 @@ class BaseModel(BaseParent):
         self.__create_samples_directory(SPLIT_TRAIN_NAME)
         self.__create_samples_directory(SPLIT_VALIDATION_NAME)
 
-    def create_train_machine_learning_required_directories(self):
-        self.__create_results_directory(SPLIT_VALIDATION_NAME)
-        self.__create_checkpoint_directory()
-        self.__create_samples_directory(SPLIT_VALIDATION_NAME)
-
     def create_test_required_directories(self):
         self.__create_results_directory(SPLIT_TEST_NAME)
         self.__create_samples_directory(SPLIT_TEST_NAME)

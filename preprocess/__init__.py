@@ -1,5 +1,5 @@
-from .basic_preprocess import BasicPreprocessTypedWordsImagesDataset
+from .basic_preprocess import BasicPreprocessParent
 
 __all__ = [
-    "BasicPreprocessTypedWordsImagesDataset",
+    "BasicPreprocessParent",
 ]

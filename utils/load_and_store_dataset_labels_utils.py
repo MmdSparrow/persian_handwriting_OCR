@@ -19,12 +19,12 @@ def generate_data_labels_csv_file(data_names_list, labels_list, directory_to_sav
 
 
 def read_csv_file(csv_file_directory):
-    return pd.read_csv(csv_file_directory / DATA_LABELS_CSV_FILE_NAME, encoding="utf-8")
+    return pd.read_csv(csv_file_directory / DATA_LABELS_CSV_FILE_NAME, encoding="utf-8", dtype={__DATA_COLUMN_NAME: str})
 
 
-def get_data_label(data_path, labels_df):
-    return labels_df.loc[labels_df[__DATA_COLUMN_NAME] == data_path.name, __LABEL_COLUMN_NAME].iloc[0]
+def get_data_label(data_name, labels_df):
+    return labels_df.loc[labels_df[__DATA_COLUMN_NAME] == data_name, __LABEL_COLUMN_NAME].iloc[0]
 
 
-def get_data_labels(data_paths_list, labels_df):
-    return [labels_df.loc[labels_df[__DATA_COLUMN_NAME] == sample_path.name, __LABEL_COLUMN_NAME].iloc[0] for sample_path in data_paths_list]
+def get_data_labels(data_names, labels_df):
+    return [labels_df.loc[labels_df[__DATA_COLUMN_NAME] == data_name, __LABEL_COLUMN_NAME].iloc[0] for data_name in data_names]

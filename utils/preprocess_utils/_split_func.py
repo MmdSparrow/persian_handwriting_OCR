@@ -37,53 +37,53 @@ def stratified_folds_split_func(
 
 
 def split_test_and_others_func(
-    files_paths_list,
+    data_list,
     labels_list,
     test_ratio,
     seed,
 ):
-    files_paths_train_and_validation, files_paths_test, train_and_validation_labels, test_labels = None, None, None, None
+    train_and_validation_data_list, test_data_list, train_and_validation_labels, test_labels = None, None, None, None
     if test_ratio is None or test_ratio < __EQUAL_TO_ZERO_THRESHOLD:
-        files_paths_train_and_validation = files_paths_list
-        files_paths_test = []
+        train_and_validation_data_list = data_list
+        test_data_list = []
         train_and_validation_labels = labels_list
         test_labels = []
     else:
-        files_paths_train_and_validation, files_paths_test, train_and_validation_labels, test_labels = train_test_split(
-            files_paths_list,
+        train_and_validation_data_list, test_data_list, train_and_validation_labels, test_labels = train_test_split(
+            data_list,
             labels_list,
             test_size=test_ratio,
             stratify=labels_list,
             random_state=seed,
         )
-    return files_paths_test, files_paths_train_and_validation, test_labels, train_and_validation_labels
+    return test_data_list, train_and_validation_data_list, test_labels, train_and_validation_labels
 
 
 def split_test_train_validation_func(
-    files_paths_list,
+    data_list,
     labels_list,
     test_ratio,
     validation_ratio,
     seed,
 ):
-    files_paths_test, files_paths_train_and_validation, test_labels, train_and_validation_labels = split_test_and_others_func(
-        files_paths_list,
+    test_data_list, train_and_validation_data_list, test_labels, train_and_validation_labels = split_test_and_others_func(
+        data_list,
         labels_list,
         test_ratio,
         seed,
     )
-    files_paths_train, files_paths_validation, train_labels, validation_labels = None, None, None, None
+    train_data_list, validation_data_list, train_labels, validation_labels = None, None, None, None
     if validation_ratio is None or validation_ratio < __EQUAL_TO_ZERO_THRESHOLD:
-        files_paths_train = files_paths_train_and_validation
-        files_paths_validation = []
+        train_data_list = train_and_validation_data_list
+        validation_data_list = []
         train_labels = train_and_validation_labels
         validation_labels = []
     else:
-        files_paths_train, files_paths_validation, train_labels, validation_labels = train_test_split(
-            files_paths_train_and_validation,
+        train_data_list, validation_data_list, train_labels, validation_labels = train_test_split(
+            train_and_validation_data_list,
             train_and_validation_labels,
             test_size=validation_ratio,
             stratify=train_and_validation_labels,
             random_state=seed,
         )
-    return files_paths_test, files_paths_train, files_paths_validation, test_labels, train_labels, validation_labels
+    return test_data_list, train_data_list, validation_data_list, test_labels, train_labels, validation_labels

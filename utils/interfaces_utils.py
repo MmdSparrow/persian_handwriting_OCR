@@ -2,9 +2,12 @@ import time
 from functools import wraps
 
 from constants.common_constants import TYPED_WORDS_IMAGES_DATASET_NAME
+from info.typed_words_images import IMAGES_DIRECTORY as IMAGES_DIRECTORY_TYPED_WORDS_IMAGES
+from info.typed_words_images import IMAGES_FORMAT as IMAGES_FORMAT_TYPED_WORDS_IMAGES
 from initial_preparation import InitialPreparationTypedWrdsImgesDatasets
 
 __all__ = [
+    "get_dataset_info",
     "initial_preparation_class_selector",
     "log_seperate_line_decorator",
     "measure_runtime",
@@ -14,6 +17,12 @@ __all__ = [
 def initial_preparation_class_selector(dataset_name):
     if dataset_name == TYPED_WORDS_IMAGES_DATASET_NAME:
         return InitialPreparationTypedWrdsImgesDatasets
+    raise ValueError()
+
+
+def get_dataset_info(dataset_name):
+    if dataset_name == TYPED_WORDS_IMAGES_DATASET_NAME:
+        return IMAGES_DIRECTORY_TYPED_WORDS_IMAGES, IMAGES_FORMAT_TYPED_WORDS_IMAGES
     raise ValueError()
 
 

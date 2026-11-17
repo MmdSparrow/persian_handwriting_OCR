@@ -1,5 +1,5 @@
 from _base import BaseData
-from preprocess import BasicPreprocessParent
+from split import BasicPreprocessParent
 from utils.interfaces_utils import (
     initial_preparation_class_selector,
     measure_runtime,

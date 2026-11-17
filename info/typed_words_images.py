@@ -1,0 +1,2 @@
+IMAGES_DIRECTORY = "images"
+IMAGES_FORMAT = ".tif"

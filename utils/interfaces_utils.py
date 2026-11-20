@@ -2,7 +2,7 @@ import time
 from functools import wraps
 
 from constants.common_constants import TYPED_WORDS_IMAGES_DATASET_NAME
-from data.specific_preprocess_typed_words_images import TypedWordsImagesSpecificPreprocesses
+from data.typed_words_images_specific_preprocesses import TypedWordsImagesSpecificPreprocesses
 from info.typed_words_images import IMAGES_DIRECTORY as IMAGES_DIRECTORY_TYPED_WORDS_IMAGES
 from info.typed_words_images import IMAGES_FORMAT as IMAGES_FORMAT_TYPED_WORDS_IMAGES
 from initial_preparation import InitialPreparationTypedWrdsImgesDatasets

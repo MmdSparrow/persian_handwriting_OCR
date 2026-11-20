@@ -87,6 +87,7 @@ FOCAL_LOSS = "focal_loss"
 
 ############################################ DATASETS ############################################
 TYPED_WORDS_IMAGES_DATASET_NAME = "typed_words_images"
+PERSIAN_PIXEL_DATASET_NAME = "persian_pixel"
 
 ############################################ EARLY STOP ############################################
 EARLY_STOP_ACCURACY_LIMIT = "early_stop_accuracy_limit"

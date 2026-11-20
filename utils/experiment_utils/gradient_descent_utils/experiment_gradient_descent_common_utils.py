@@ -5,10 +5,7 @@ from constants.common_constants import CROSS_ENTROPY_LOSS, FOCAL_LOSS
 from utils.experiment_utils.loss_functions import FocalLoss
 
 __all__ = [
-    "compute_avg_column_wise",
-    "compute_chunks_batch_avg_loss",
     "compute_prediction",
-    "compute_prediction_by_voting_on_chunks_batch",
     "compute_probability",
     "count_parameters",
     "generate_report_per_batch",
@@ -38,25 +35,8 @@ def compute_prediction(outputs_logit):
     return outputs_logit.argmax(dim=1)
 
 
-def compute_prediction_by_voting_on_chunks_batch(output_logit_chunks_batch_list):
-    chunks_predictions = torch.stack([torch.argmax(chunk, dim=1) for chunk in output_logit_chunks_batch_list]).T
-    predictions, _ = torch.mode(chunks_predictions, dim=1)
-    return predictions.tolist()
-
-
 def compute_probability(outputs_logit):
     return outputs_logit.softmax(dim=1)[:, 1]
-
-
-def compute_avg_column_wise(matrix_2d):
-    return matrix_2d.mean(dim=0)
-
-
-def compute_chunks_batch_avg_loss(output_logit_chunks_batch_list, label_batch, criterion):
-    total_loss = 0.0
-    for ouptut_chunk_batch in output_logit_chunks_batch_list:
-        total_loss += criterion(ouptut_chunk_batch, label_batch).item()
-    return total_loss / len(output_logit_chunks_batch_list)
 
 
 def count_parameters(model, dataloader_train):

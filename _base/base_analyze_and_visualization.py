@@ -3,7 +3,6 @@ import os
 from constants.base_directories_names_constants import (
     ANALYZE_DIRECTORY_NAME,
     RESULTS_DIRECTORY_NAME,
-    SPLITED_DATA_DIRECTORY_NAME,
     VISUALIZATIONS_DIRECTORY_NAME,
 )
 

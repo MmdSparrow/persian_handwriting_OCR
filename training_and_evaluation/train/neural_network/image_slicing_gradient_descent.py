@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from visualizer import VisualizerParent
 
 from constants.common_constants import (
     ACCURACY_LIMIT,
@@ -13,7 +14,6 @@ from constants.common_constants import (
     SPLIT_VALIDATION_NAME,
 )
 from data import DatasetParent
-from info.common_info import PERSIAN_ALPHABETS_CHARACTERS, SPECIAL_CHARACTERS
 from utils.experiment_utils.experiment_common_utils import (
     compute_prediction_based_scores,
     compute_probability_based_scores,
@@ -43,33 +43,31 @@ __all__ = ["TrainGradientDescentParent"]
 
 
 class TrainGradientDescentParent(TrainParent):
-    def __init__(self, dataset_directory, image_splits_num, word_max_length, logger, log_init_info):
-        super().__init__(dataset_directory, logger, log_init_info)
+    def __init__(self, preprocessed_data_directory, logger, log_init_info):
+        super().__init__(preprocessed_data_directory, logger, log_init_info)
         if log_init_info:
             self._logger.info("If model has `gradient_clip`, `weight_clip` or `initialize_weights` methods, they are called automatically")
 
-        self.__training_vocabulary = PERSIAN_ALPHABETS_CHARACTERS + SPECIAL_CHARACTERS
-
-        self.__letter_to_index_dict = {}
-        
-        self.__encode_dimension= len(self.__training_vocabulary)
-        for i in range(self.__encode_dimension):
-            self.__letter_to_index_dict[self.__training_vocabulary[i]] = i
-
-        self.__image_splits_num = image_splits_num
-        self.__word_max_length = word_max_length
-
-    def __word_preprocess(self, word):
-        if len(word) > self.__word_max_length:
-            word = word[: self.__word_max_length]
-        word = word + "E"
-        return [self.__letter_to_index_dict[c] for c in word]
-
-    def __prepare_data(self, batch_size, transform=None, augmentation=None):
+    def __prepare_data(
+        self,
+        train_data_files_names_list,
+        validation_data_files_names_list,
+        dataset_specific_preprocesses,
+        chosen_dataset_specific_preprocesses_name_list,
+        chosen_dataset_specific_preprocesses_hyperparameters,
+        chosen_common_preprocesses_list,
+        chosen_common_preprocesses_hyperparameters_dict,
+        batch_size,
+        augmentation,
+    ):
         dataset_train = DatasetParent(
-            root=self.dataset_directory,
-            split=SPLIT_TRAIN_NAME,
-            transform=transform,
+            dataset_directory=self.dataset_directory,
+            data_files_names_list=train_data_files_names_list,
+            dataset_specific_preprocesses=dataset_specific_preprocesses,
+            chosen_dataset_specific_preprocesses_name_list=chosen_dataset_specific_preprocesses_name_list,
+            chosen_dataset_specific_preprocesses_hyperparameters=chosen_dataset_specific_preprocesses_hyperparameters,
+            chosen_common_preprocesses_list=chosen_common_preprocesses_list,
+            chosen_common_preprocesses_hyperparameters_dict=chosen_common_preprocesses_hyperparameters_dict,
             augmentation=augmentation,
         )
         dataloader_train = DataLoader(
@@ -78,22 +76,35 @@ class TrainGradientDescentParent(TrainParent):
             shuffle=True,
         )
         dataset_validation = DatasetParent(
-            root=self.dataset_directory,
-            split=SPLIT_VALIDATION_NAME,
-            transform=transform,
+            dataset_directory=self.dataset_directory,
+            data_files_names_list=validation_data_files_names_list,
+            dataset_specific_preprocesses=dataset_specific_preprocesses,
+            chosen_dataset_specific_preprocesses_name_list=chosen_dataset_specific_preprocesses_name_list,
+            chosen_dataset_specific_preprocesses_hyperparameters=chosen_dataset_specific_preprocesses_hyperparameters,
+            chosen_common_preprocesses_list=chosen_common_preprocesses_list,
+            chosen_common_preprocesses_hyperparameters_dict=chosen_common_preprocesses_hyperparameters_dict,
             augmentation=None,
         )
         dataloader_validation = DataLoader(
             dataset_validation,
             batch_size=batch_size,
-            shuffle=True,
+            shuffle=True,  # for better sampling
+            # shuffle=False,
         )
         return dataloader_train, dataloader_validation
 
-    def train_and_validation(
+
+    def train(
         self,
+        dataset_specific_preprocesses,
+        chosen_dataset_specific_preprocesses_name_list,
+        chosen_dataset_specific_preprocesses_hyperparameters,
+        chosen_common_preprocesses_list,
+        chosen_common_preprocesses_hyperparameters_dict,
         model,
         epochs_num,
+        train_data_files_names_list,
+        validation_data_files_names_list,
         batch_size,
         optimizer_name,
         optimizer_hyperparameters_dict,
@@ -114,7 +125,6 @@ class TrainGradientDescentParent(TrainParent):
         validation_batch_log_threshold,
         validation_epoch_and_batch_epoch_sample_threshold,
         validation_epoch_and_batch_batch_sample_threshold,
-        log_init_info,
     ):
         if early_stop_methods is None:
             early_stop_methods = []
@@ -141,8 +151,18 @@ class TrainGradientDescentParent(TrainParent):
         scores_list_train_epoch = []
         loss_list_validation_epoch = []
         scores_list_validation_epoch = []
-        dataloader_train, dataloader_validation = self.__prepare_data(batch_size, None, augmentation)
-        if log_init_info:
+        dataloader_train, dataloader_validation = self.__prepare_data(
+            train_data_files_names_list=train_data_files_names_list,
+            validation_data_files_names_list=validation_data_files_names_list,
+            dataset_specific_preprocesses=dataset_specific_preprocesses,
+            chosen_dataset_specific_preprocesses_name_list=chosen_dataset_specific_preprocesses_name_list,
+            chosen_dataset_specific_preprocesses_hyperparameters=chosen_dataset_specific_preprocesses_hyperparameters,
+            chosen_common_preprocesses_list=chosen_common_preprocesses_list,
+            chosen_common_preprocesses_hyperparameters_dict=chosen_common_preprocesses_hyperparameters_dict,
+            batch_size=batch_size,
+            augmentation=augmentation,
+        )
+        if self._log_init_info:
             self._logger.info("-" * 80)
             self._logger.info(f"Epochs: {epochs_num}")
             self._logger.info(f"Batch Size: {batch_size}")
@@ -170,8 +190,7 @@ class TrainGradientDescentParent(TrainParent):
                 self._logger.info("Model use implemented gradient clip function")
         if hasattr(model, "initialize_weights"):
             model.initialize_weights()
-
-        self.__train_or_continue_train_and_validation(
+        self.__train_or_continue_train_and_validation_process(
             model=model,
             dataloader_train=dataloader_train,
             dataloader_validation=dataloader_validation,
@@ -200,12 +219,80 @@ class TrainGradientDescentParent(TrainParent):
             validation_epoch_and_batch_sample_threshold=validation_epoch_and_batch_sample_threshold,
         )
 
-    def __train_or_continue_train_and_validation(
+    def continue_train(
+        self,
+        model,
+        checkpoint_directory,
+        results_directory,
+        directory_to_save_checkpoint,
+        directory_to_save_results,
+        directory_to_save_samples,
+        train_batch_log_threshold,
+        validation_batch_log_threshold,
+        new_epochs_num=None,
+    ):
+        (
+            batch_size,
+            checkpoint_epoch,
+            epochs_num,
+            model_state_dict,
+            optimizer_name,
+            optimizer_state_dict,
+            scheduler_name,
+            scheduler_state_dict,
+            loss_function_name,
+            final_checkpoint_details_dict,
+            min_loss,
+            loss_list_train_epoch,
+            loss_list_validation_epoch,
+            scores_list_train_epoch,
+            scores_list_validation_epoch,
+            augmentation,
+        ) = load_checkpoint(checkpoint_directory, results_directory)
+        if new_epochs_num is not None:
+            epochs_num = new_epochs_num
+        model.load_state_dict(model_state_dict)
+        model.to(self._device)
+        criterion = loss_function_selector(loss_function_name)
+        optimizer = optimizer_selector(optimizer_name, model, learning_rate=1e-3)
+        optimizer.load_state_dict(optimizer_state_dict)
+        scheduler = scheduler_selector(scheduler_name, optimizer, None)
+        scheduler.load_state_dict(scheduler_state_dict)
+        final_checkpoint_details = FinalCheckpointDetails()
+        final_checkpoint_details.__dict__.update(final_checkpoint_details_dict)
+        scores_name_list = [score_name for score_name in scores_list_train_epoch[0]]
+        scores_functions_dict = score_functions_selector(scores_name_list)
+        self._logger.info(f"Continue checkpoint {checkpoint_directory}")
+        # prepare data
+        self.__train_or_continue_train_and_validation_process(
+            model=model,
+            batch_size=batch_size,
+            epoch_start=checkpoint_epoch + 1,
+            epochs_num=epochs_num,
+            loss_function_name=loss_function_name,
+            criterion=criterion,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            scores_functions_dict=scores_functions_dict,
+            final_checkpoint_details=final_checkpoint_details,
+            min_loss=min_loss,
+            loss_list_train_epoch=loss_list_train_epoch,
+            loss_list_validation_epoch=loss_list_validation_epoch,
+            scores_list_train_epoch=scores_list_train_epoch,
+            scores_list_validation_epoch=scores_list_validation_epoch,
+            augmentation=augmentation,
+            directory_to_save_checkpoint=directory_to_save_checkpoint,
+            directory_to_save_results=directory_to_save_results,
+            directory_to_save_samples=directory_to_save_samples,
+            train_batch_log_threshold=train_batch_log_threshold,
+            validation_batch_log_threshold=validation_batch_log_threshold,
+        )
+
+    def __train_or_continue_train_and_validation_process(
         self,
         model,
         dataloader_train,
         dataloader_validation,
-        validation_function,
         batch_size,
         epoch_start,
         epochs_num,
@@ -257,7 +344,7 @@ class TrainGradientDescentParent(TrainParent):
             self._logger.info(report)
 
             # validation
-            avg_total_loss_validation, epoch_scores_dict_validation = validation_function(
+            avg_total_loss_validation, epoch_scores_dict_validation = self.__validation_function(
                 model=model,
                 dataloader_validation=dataloader_validation,
                 criterion=criterion,
@@ -372,37 +459,9 @@ class TrainGradientDescentParent(TrainParent):
         loss_batch_list = []
         labels_list = []
         outputs_logit_list = []
-        for batch_index, (images_batch, labels_batch) in enumerate(dataloader_train):
-            images_batch, labels_batch = images_batch.to(self._device), labels_batch.to(self._device)
-
-            # preprocess labels
-            self.__word_preprocess
-            def __word_preprocess(self, word):
-                if len(word) > self.__word_max_length:
-                    word = word[: self.__word_max_length]
-                word = word + "E"
-                return [self.__letter_to_index_dict[c] for c in word]
-
-            
-            hidden = torch.zeros((1, self.__encode_dimension)).double().to(self._device)
-
-            start_token = torch.zeros((1, self.__encode_dimension), dtype=torch.double).to(self._device)
-            start_token[0][self.__letter_to_index_dict["S"]] = 1
-
-            _, _, image_width = images_batch.shape
-            step = int(image_width / self.__image_splits_num)
-
-            output = start_token
-            letters = []
-            for j in range(self.__image_splits_num):
-                output, hidden = model(images_batch[:, :, :, step * (self.__image_splits_num - j - 1) : step * (self.__image_splits_num - j)], output, hidden)
-                letters.append(output)
-
-            predicted_word = torch.cat(letters, dim=1).view(self.__image_splits_num, 1, self.__encode_dimension)
-            # target_seq_len = torch.tensor([word.size(1)], dtype=torch.long)
-            
-            
-            output_batch_logit = model(images_batch)
+        for batch_index, (eegs_batch, labels_batch) in enumerate(dataloader_train):
+            eegs_batch, labels_batch = eegs_batch.to(self._device), labels_batch.to(self._device)
+            output_batch_logit = model(eegs_batch)
             loss = criterion(output_batch_logit, labels_batch)
             optimizer.zero_grad()
             loss.backward()
@@ -442,12 +501,31 @@ class TrainGradientDescentParent(TrainParent):
                 and epoch_index % train_epoch_and_batch_sample_threshold[0] == 0
                 and batch_index % train_epoch_and_batch_sample_threshold[1] == 0
             ):
-                batch_size = images_batch.shape[0]
+                batch_size = eegs_batch.shape[0]
                 random_index = torch.randint(0, batch_size, (1,)).item()
-                sample = images_batch[random_index].detach()
+                sample = eegs_batch[random_index].detach()
                 sample_true_label = labels_batch[random_index].detach()
                 sample_predicted_label = predictions_batch[random_index]
+                channel_importance = compute_integrated_gradients(
+                    model=model,
+                    x=sample,
+                    target_class=1,
+                )
+                channel_importance = channel_importance.detach().cpu()
+                if channel_importance.ndim == 2:
+                    channel_importance = concatenate_hemispharer_based_separated_channels(
+                        channel_importance[0],
+                        channel_importance[1],
+                    )
+
                 ch_names = dataloader_train.dataset.get_selected_channels()
+                channel_importance = channel_importance.numpy()
+                n_channels = len(channel_importance)
+                sorted_channel_indices = np.argsort(channel_importance)[::-1]
+                first_20_percent_count = int(np.ceil(0.20 * n_channels))
+                second_20_percent_count = int(np.ceil(0.20 * n_channels))
+                first_20_percent_indices = sorted_channel_indices[:first_20_percent_count]
+                second_20_percent_indices = sorted_channel_indices[first_20_percent_count : first_20_percent_count + second_20_percent_count]
 
                 is_correct_prediction = sample_predicted_label == sample_true_label
                 if is_correct_prediction:
@@ -459,16 +537,21 @@ class TrainGradientDescentParent(TrainParent):
                     second_20_percent_counter = self._second_20_percent_channels_count_train_false_predictions
                     self._total_train_false_predictions_samples += 1
 
-                # VisualizerParent.visualize_channels_importance_on_2d_head(
-                #     channel_scores=channel_importance,
-                #     split=SPLIT_TRAIN_NAME,
-                #     file_name=self._train_sample_index,
-                #     montage_name=dataloader_train.dataset.get_montage_name(),
-                #     ch_names=dataloader_train.dataset.get_selected_channels(),
-                #     true_label=sample_true_label,
-                #     predicted_label=sample_predicted_label,
-                #     directory_to_save_figure=directory_to_save_samples,
-                # )
+                for channel_index in first_20_percent_indices:
+                    first_20_percent_counter[ch_names[channel_index]] += 1
+                for channel_index in second_20_percent_indices:
+                    second_20_percent_counter[ch_names[channel_index]] += 1
+
+                VisualizerParent.visualize_channels_importance_on_2d_head(
+                    channel_scores=channel_importance,
+                    split=SPLIT_TRAIN_NAME,
+                    file_name=self._train_sample_index,
+                    montage_name=dataloader_train.dataset.get_montage_name(),
+                    ch_names=dataloader_train.dataset.get_selected_channels(),
+                    true_label=sample_true_label,
+                    predicted_label=sample_predicted_label,
+                    directory_to_save_figure=directory_to_save_samples,
+                )
                 self._train_sample_index += 1
         avg_total_loss_train = sum(loss_batch_list) / train_batches_num
         outputs_logit_list = torch.stack(outputs_logit_list)
@@ -535,25 +618,52 @@ class TrainGradientDescentParent(TrainParent):
                     sample = eegs_batch[random_index].detach()
                     sample_true_label = labels_batch[random_index].detach()
                     sample_predicted_label = predictions_batch[random_index]
+                    channel_importance = compute_integrated_gradients(
+                        model=model,
+                        x=sample,
+                        target_class=1,
+                    )
+                    channel_importance = channel_importance.detach().cpu()
+                    if channel_importance.ndim == 2:
+                        channel_importance = concatenate_hemispharer_based_separated_channels(
+                            channel_importance[0],
+                            channel_importance[1],
+                        )
 
                     ch_names = dataloader_validation.dataset.get_selected_channels()
+                    channel_importance = channel_importance.numpy()
+                    n_channels = len(channel_importance)
+                    sorted_channel_indices = np.argsort(channel_importance)[::-1]
+                    first_20_percent_count = int(np.ceil(0.20 * n_channels))
+                    second_20_percent_count = int(np.ceil(0.20 * n_channels))
+                    first_20_percent_indices = sorted_channel_indices[:first_20_percent_count]
+                    second_20_percent_indices = sorted_channel_indices[first_20_percent_count : first_20_percent_count + second_20_percent_count]
 
                     is_correct_prediction = sample_predicted_label == sample_true_label
                     if is_correct_prediction:
+                        first_20_percent_counter = self._first_20_percent_channels_count_validation_true_predictions
+                        second_20_percent_counter = self._second_20_percent_channels_count_validation_true_predictions
                         self._total_validation_true_predictions_samples += 1
                     else:
+                        first_20_percent_counter = self._first_20_percent_channels_count_validation_false_predictions
+                        second_20_percent_counter = self._second_20_percent_channels_count_validation_false_predictions
                         self._total_validation_false_predictions_samples += 1
 
-                    # VisualizerParent.visualize_channels_importance_on_2d_head(
-                    #     channel_scores=channel_importance,
-                    #     split=SPLIT_VALIDATION_NAME,
-                    #     file_name=self._validation_sample_index,
-                    #     montage_name=dataloader_validation.dataset.get_montage_name(),
-                    #     ch_names=dataloader_validation.dataset.get_selected_channels(),
-                    #     true_label=sample_true_label,
-                    #     predicted_label=sample_predicted_label,
-                    #     directory_to_save_figure=directory_to_save_samples,
-                    # )
+                    for channel_index in first_20_percent_indices:
+                        first_20_percent_counter[ch_names[channel_index]] += 1
+                    for channel_index in second_20_percent_indices:
+                        second_20_percent_counter[ch_names[channel_index]] += 1
+
+                    VisualizerParent.visualize_channels_importance_on_2d_head(
+                        channel_scores=channel_importance,
+                        split=SPLIT_VALIDATION_NAME,
+                        file_name=self._validation_sample_index,
+                        montage_name=dataloader_validation.dataset.get_montage_name(),
+                        ch_names=dataloader_validation.dataset.get_selected_channels(),
+                        true_label=sample_true_label,
+                        predicted_label=sample_predicted_label,
+                        directory_to_save_figure=directory_to_save_samples,
+                    )
                     self._validation_sample_index += 1
             avg_total_loss_validation = sum(loss_batch_list) / validation_batches_num
             outputs_logit_list = torch.stack(outputs_logit_list)

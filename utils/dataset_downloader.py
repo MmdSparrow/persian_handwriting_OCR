@@ -5,7 +5,8 @@ from pathlib import Path
 import requests
 
 from constants.base_directories_names_constants import DATASETS_ROOT_DIRECTORY_NAME
-from constants.common_constants import TYPED_WORDS_IMAGES_DATASET_NAME
+from constants.common_constants import PERSIAN_PIXEL_DATASET_NAME, TYPED_WORDS_IMAGES_DATASET_NAME
+from datasets import load_dataset
 
 __all__ = ["donwload_dataset"]
 
@@ -13,6 +14,11 @@ __DATASET_PATH_ON_COLAB = Path("/content") / "OCR_persian_text" / DATASETS_ROOT_
 __DATASET_PATH_ON_LOCAL = DATASETS_ROOT_DIRECTORY_NAME
 
 __TYPED_WORDS_IMAGES_DATASET_COUNT = 120000
+
+__PERSIAN_PIXEL_DATASET_SENTENCE_COUNT = 251000
+__PERSIAN_PIXEL_DATASET_PARAGRAPH_COUNT = 110138
+__PERSIAN_PIXEL_DATASET_PAGE_COUNT = 31108
+__PERSIAN_PIXEL_DATASET_FULL_COUNT = 343246
 
 
 def donwload_dataset(dataset_name, colab_version=True):
@@ -25,6 +31,8 @@ def donwload_dataset(dataset_name, colab_version=True):
 
     if dataset_name == TYPED_WORDS_IMAGES_DATASET_NAME:
         __download_typed_words_images(dataset_directory)
+    elif dataset_name == PERSIAN_PIXEL_DATASET_NAME:
+        __download_persian_pixel(dataset_directory)
     else:
         raise ValueError()
 
@@ -48,3 +56,14 @@ def __download_typed_words_images(dataset_directory):
                 member.name = str(Path(*parts[1:]))
                 tar.extract(member, path=destination_dir)
     archive_path.unlink()
+
+
+def __download_persian_pixel(dataset_directory, specific_configuration="sentence"):
+    __DATASET_NAME = "Omarrran/Persian_Pixel"
+    dataset = load_dataset(
+        __DATASET_NAME,
+        specific_configuration,
+        split="train",
+    )
+    dataset.save_to_disk(dataset_directory)
+    # ADD DATASET COUNT VALIDATOR

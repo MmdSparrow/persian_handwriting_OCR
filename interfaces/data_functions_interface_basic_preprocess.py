@@ -1,9 +1,6 @@
 from _base import BaseData
-from split import BasicPreprocessParent
-from utils.interfaces_utils import (
-    initial_preparation_class_selector,
-    measure_runtime,
-)
+from split import Splitter
+from utils.interfaces_utils import initial_preparation_class_selector, measure_runtime
 
 __all__ = ["DataFunctionsInterfaceBasicPreprocess"]
 
@@ -27,33 +24,11 @@ class DataFunctionsInterfaceBasicPreprocess(BaseData):
                 self._logger.info("Data functions seed is not set")
 
     @measure_runtime("Initial preparation")
-    def restruct_dataset(self):
+    def initial_preparation(self):
         InitialPreparationClass = initial_preparation_class_selector(self.__dataset_name)
         initial_preparation = InitialPreparationClass(dataset_directory=self._dataset_directory)
-        initial_preparation.restruct_dataset()
+        initial_preparation.initial_preparation()
         self._logger.info("Dataset restructed")
-
-    @measure_runtime("Preprocessing")
-    def preprocess(
-        self,
-        chosen_preprocesses_list,
-        preprocesses_hyperparameters_kwargs,
-        delete_raw_data_files,
-    ):
-        self.create_preprocessed_data_required_directories()
-        basic_preprocess = BasicPreprocessParent(
-            logger=self._logger,
-            seed=self._seed,
-        )
-        basic_preprocess.apply_preprocesses(
-            dataset_directory=self._dataset_directory,
-            directory_to_store_preprocessed_data=self._preprocessed_data_directory,
-            chosen_preprocesses_list=chosen_preprocesses_list,
-            preprocesses_hyperparameters_kwargs=preprocesses_hyperparameters_kwargs,
-            delete_raw_data_files=delete_raw_data_files,
-        )
-        self._logger.info("Preprocessing completed")
-        return self._preprocessed_data_directory
 
     @measure_runtime("Data splitting")
     def split_test_and_train_and_validation(
@@ -61,21 +36,18 @@ class DataFunctionsInterfaceBasicPreprocess(BaseData):
         test_ratio,
         validation_ratio,
     ):
-        basic_preprocess = BasicPreprocessParent(
+        splitter = Splitter(
             logger=self._logger,
             seed=self._seed,
         )
-        splits_info_file_path = basic_preprocess.split_test_and_train_and_validation(
-            preprocessed_data_directory=self._preprocessed_data_directory,
-            directory_to_store_splits_info_file=self._outputs_directory,
+        splits_info_file_path = splitter.split_test_and_train_and_validation(
+            dataset_directory=self._dataset_directory,
             test_ratio=test_ratio,
             validation_ratio=validation_ratio,
+            directory_to_store_splits_info_file=self._outputs_directory,
         )
         self._logger.info(f"Train-validation-test splitting completed successfully (test ratio: {test_ratio:.2f}, validation ratio: {validation_ratio:.2f})")
         return splits_info_file_path
-
-    # def replace_split_info
-    # TODO
 
     @measure_runtime("Data splitting")
     def split_stratified_folds(
@@ -83,18 +55,15 @@ class DataFunctionsInterfaceBasicPreprocess(BaseData):
         test_ratio,
         folds_num,
     ):
-        basic_preprocess = BasicPreprocessParent(
+        splitter = Splitter(
             logger=self._logger,
             seed=self._seed,
         )
-        folds_info_file_path, splits_info_file_path = basic_preprocess.split_stratified_folds(
-            preprocessed_data_directory=self._preprocessed_data_directory,
-            directory_to_store_folds_and_splits_info_file=self._outputs_directory,
+        folds_info_file_path, splits_info_file_path = splitter.split_stratified_folds(
+            dataset_directory=self._dataset_directory,
             test_ratio=test_ratio,
             folds_num=folds_num,
+            directory_to_store_folds_and_splits_info_file=self._outputs_directory,
         )
         self._logger.info(f"Stratified splitting completed successfully: {folds_num} folds generated with a test ratio of {test_ratio:.2f}")
         return folds_info_file_path, splits_info_file_path
-
-    # def replace_fold_info
-    # TODO

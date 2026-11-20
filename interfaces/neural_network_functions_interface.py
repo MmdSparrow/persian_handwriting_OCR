@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from _base import BaseModel
 from training_and_evaluation import TestGradientDescentParent, TrainGradientDescentParent
 from utils.interfaces_utils import log_seperate_line_decorator, measure_runtime
@@ -41,7 +39,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         validation_epoch_and_batch_batch_sample_threshold,
         log_init_info=False,
     ):
-        dataset_directory = Path(dataset_directory)
         self.create_train_neural_network_required_directories()
         train_parent = TrainGradientDescentParent(dataset_directory, self._logger, log_init_info)
         train_parent.train_with_normal_validation(
@@ -98,7 +95,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         validation_epoch_and_batch_batch_sample_threshold,
         log_init_info=False,
     ):
-        dataset_directory = Path(dataset_directory)
         self.create_train_neural_network_required_directories()
         train_parent = TrainGradientDescentParent(dataset_directory, self._logger, log_init_info)
         train_parent.train_with_ensemble_validation(
@@ -142,7 +138,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         epochs_num=None,
         log_init_info=False,
     ):
-        dataset_directory = Path(dataset_directory)
         self.create_train_neural_network_required_directories()
         self._logger.info("Continue model training...")
         train_parent = TrainGradientDescentParent(dataset_directory, self._logger, log_init_info)
@@ -172,7 +167,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         test_batch_sample_threshold,
         log_init_info=False,
     ):
-        dataset_directory = Path(dataset_directory)
         self.create_test_required_directories()
         test_parent = TestGradientDescentParent(dataset_directory, self._logger, log_init_info)
         test_parent.test(
@@ -201,7 +195,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         test_batch_sample_threshold,
         log_init_info=False,
     ):
-        dataset_directory = Path(dataset_directory)
         self.create_test_required_directories()
         test_parent = TestGradientDescentParent(dataset_directory, self._logger, log_init_info)
         test_parent.ensemble_test(

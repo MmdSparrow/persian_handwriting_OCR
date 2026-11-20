@@ -13,7 +13,7 @@ from constants.base_directories_names_constants import (
 class BaseParent:
     def __create_outputs_directory(self, outputs_directory):
         if outputs_directory is None:
-            self._outputs_directory_name = datetime.today().strftime("%Y-%m-%d_%H-%M-%S")  # noqa: DTZ002
+            self._outputs_directory_name = datetime.now().astimezone().strftime("%Y-%m-%d_%H-%M-%S")
             self._outputs_directory = OUTPUTS_MAIN_DIRECTORY_NAME / self._outputs_directory_name
         else:
             self._outputs_directory = Path(outputs_directory)

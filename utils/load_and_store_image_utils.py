@@ -1,10 +1,20 @@
-import numpy as np
+import cv2
+
+__all__ = ["image_loader_selector"]
 
 
-def store_image(
-    image,
-    image_name,
-    directory_to_store_image,
-):
-    data_file_path = directory_to_store_image / f"{image_name}.npy"
-    np.save(data_file_path, image)
+def image_loader_selector(image_format):
+    if image_format == ".tif" or image_format == ".tiff":
+        return __load_tif_image
+
+
+def __load_tif_image(image_path):
+    return cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+
+    # # Display image
+    # plt.imshow(img, cmap='gray')
+    # plt.axis('off')
+    # plt.show()
+
+    # print(img.shape)
+    # print(img.dtype)

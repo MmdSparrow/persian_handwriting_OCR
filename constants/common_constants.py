@@ -109,3 +109,8 @@ PREPROCESS_HYPERPARAMETER_RESIZING_TARGET_WIDTH = "resizing_target_width"
 
 ############################################ DENOISING METHODS ############################################
 DENOISING_METHODS_MEDIAN_BLUR = "median blur"
+
+############################################ PREPROCESSES ############################################
+
+CHOSEN_PREPROCESSES_LIST_IN_ORDER_OF_APPLY = []
+CHOSEN_PREPROCESSES_AND_ITS_HYPERPARAMETERS_DICT = []

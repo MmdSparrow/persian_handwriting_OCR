@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 from constants.base_directories_names_constants import PROCESSED_DATA_DIRECTORY_NAME
 from constants.common_constants import SPLITS_NAMES
@@ -12,7 +11,7 @@ __all__ = ["BaseData"]
 class BaseData(BaseParent):
     def __init__(self, dataset_directory, verbose=True, outputs_directory=None, seed=None):
         super().__init__(verbose, outputs_directory)
-        self._dataset_directory = Path(dataset_directory)
+        self._dataset_directory = dataset_directory
         self._seed = seed
 
     def __create_preprocessed_data_directory(self, pipeline):

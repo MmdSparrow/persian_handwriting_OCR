@@ -19,11 +19,11 @@ class InitialPreparationParent(ABC):
         self._logger.info(f"image directory: {self._IMAGES_DIRECTORY}")
 
     @abstractmethod
-    def _list_data_names_and_labels(self):
+    def _get_all_data_names_and_labels(self):
         pass
 
     def _generate_data_labels(self):
-        data_files_names_list, labels_list = self._list_data_names_and_labels()
+        data_files_names_list, labels_list = self._get_all_data_names_and_labels()
         generate_data_labels_csv_file(data_files_names_list, labels_list, self._dataset_directory)
 
     def initial_preparation(self):

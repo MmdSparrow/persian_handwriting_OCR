@@ -50,8 +50,8 @@ class DatasetParent(Dataset):
             chosen_common_preprocesses_hyperparameters_dict,
             dataset_directory,
         )
-        df_labels = read_csv_file(dataset_directory)
-        labels = get_data_labels(data_files_names_list, df_labels)
+        labels_df = read_csv_file(dataset_directory)
+        labels = get_data_labels(data_files_names_list, labels_df)
         # TODO: ADD SOS or EOS IF NEEDED.....
         labels_lengths = [len(label) for label in labels]
         self.augmentation = augmentation

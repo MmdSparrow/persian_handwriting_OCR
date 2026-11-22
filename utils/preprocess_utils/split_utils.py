@@ -74,7 +74,7 @@ def __list_data_files_names_and_its_labels(
     images_directory,
     images_format,
 ):
-    data_files_names_list = list((dataset_directory / images_directory).glob(f"*{images_format}"))
+    data_files_names_list = [data_file_path.stem for data_file_path in (dataset_directory / images_directory).glob(f"*{images_format}")]
     labels_df = read_csv_file(dataset_directory)
     labels_list = get_data_labels(data_files_names_list, labels_df)
     return data_files_names_list, labels_list

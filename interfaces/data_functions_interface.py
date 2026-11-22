@@ -26,7 +26,7 @@ class DataFunctionsInterface(BaseData):
     @measure_runtime("Initial preparation")
     def initial_preparation(self):
         InitialPreparationClass = initial_preparation_class_selector(self.__dataset_name)
-        initial_preparation = InitialPreparationClass(dataset_directory=self._dataset_directory)
+        initial_preparation = InitialPreparationClass(self._dataset_directory, self._logger)
         initial_preparation.initial_preparation()
         self._logger.info("Dataset restructed")
 
@@ -44,7 +44,7 @@ class DataFunctionsInterface(BaseData):
             dataset_directory=self._dataset_directory,
             test_ratio=test_ratio,
             validation_ratio=validation_ratio,
-            directory_to_store_splits_info_file=self._outputs_directory,
+            directory_to_store_splits_info_file=self._outputs_directory_name,
         )
         self._logger.info(f"Train-validation-test splitting completed successfully (test ratio: {test_ratio:.2f}, validation ratio: {validation_ratio:.2f})")
         return splits_info_file_path
@@ -63,7 +63,7 @@ class DataFunctionsInterface(BaseData):
             dataset_directory=self._dataset_directory,
             test_ratio=test_ratio,
             folds_num=folds_num,
-            directory_to_store_folds_and_splits_info_file=self._outputs_directory,
+            directory_to_store_folds_and_splits_info_file=self._outputs_directory_name,
         )
         self._logger.info(f"Stratified splitting completed successfully: {folds_num} folds generated with a test ratio of {test_ratio:.2f}")
         return folds_info_file_path, splits_info_file_path

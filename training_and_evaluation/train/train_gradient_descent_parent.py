@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from visualizer import VisualizerParent
 
+# from visualizer import VisualizerParent
 from constants.common_constants import (
     ACCURACY_LIMIT,
     ACCURACY_SCORE_NAME,
@@ -18,7 +18,7 @@ from utils.experiment_utils.experiment_common_utils import (
     compute_prediction_based_scores,
     compute_probability_based_scores,
     score_functions_selector,
-    store_channel_importance_counts,
+    # store_channel_importance_counts,
 )
 from utils.experiment_utils.gradient_descent_utils.checkpoint_utils import load_checkpoint, save_checkpoint
 from utils.experiment_utils.gradient_descent_utils.experiment_gradient_descent_common_utils import (
@@ -416,27 +416,27 @@ class TrainGradientDescentParent(TrainParent):
                 )
                 break
 
-        store_channel_importance_counts(
-            first_20_percent_channels_count_true_prediction=self._first_20_percent_channels_count_train_true_predictions,
-            second_20_percent_channels_count_true_prediction=self._second_20_percent_channels_count_train_true_predictions,
-            first_20_percent_channels_count_false_prediction=self._first_20_percent_channels_count_train_false_predictions,
-            second_20_percent_channels_count_false_prediction=self._second_20_percent_channels_count_train_false_predictions,
-            total_samples_true_prediction=self._total_train_true_predictions_samples,
-            total_samples_flase_prediction=self._total_train_false_predictions_samples,
-            split_name=SPLIT_TRAIN_NAME,
-            directory_to_save_files=directory_to_save_results,
-        )
+        # store_channel_importance_counts(
+        #     first_20_percent_channels_count_true_prediction=self._first_20_percent_channels_count_train_true_predictions,
+        #     second_20_percent_channels_count_true_prediction=self._second_20_percent_channels_count_train_true_predictions,
+        #     first_20_percent_channels_count_false_prediction=self._first_20_percent_channels_count_train_false_predictions,
+        #     second_20_percent_channels_count_false_prediction=self._second_20_percent_channels_count_train_false_predictions,
+        #     total_samples_true_prediction=self._total_train_true_predictions_samples,
+        #     total_samples_flase_prediction=self._total_train_false_predictions_samples,
+        #     split_name=SPLIT_TRAIN_NAME,
+        #     directory_to_save_files=directory_to_save_results,
+        # )
 
-        store_channel_importance_counts(
-            first_20_percent_channels_count_true_prediction=self._first_20_percent_channels_count_validation_true_predictions,
-            second_20_percent_channels_count_true_prediction=self._second_20_percent_channels_count_validation_true_predictions,
-            first_20_percent_channels_count_false_prediction=self._first_20_percent_channels_count_validation_false_predictions,
-            second_20_percent_channels_count_false_prediction=self._second_20_percent_channels_count_validation_false_predictions,
-            total_samples_true_prediction=self._total_validation_true_predictions_samples,
-            total_samples_flase_prediction=self._total_validation_false_predictions_samples,
-            split_name=SPLIT_VALIDATION_NAME,
-            directory_to_save_files=directory_to_save_results,
-        )
+        # store_channel_importance_counts(
+        #     first_20_percent_channels_count_true_prediction=self._first_20_percent_channels_count_validation_true_predictions,
+        #     second_20_percent_channels_count_true_prediction=self._second_20_percent_channels_count_validation_true_predictions,
+        #     first_20_percent_channels_count_false_prediction=self._first_20_percent_channels_count_validation_false_predictions,
+        #     second_20_percent_channels_count_false_prediction=self._second_20_percent_channels_count_validation_false_predictions,
+        #     total_samples_true_prediction=self._total_validation_true_predictions_samples,
+        #     total_samples_flase_prediction=self._total_validation_false_predictions_samples,
+        #     split_name=SPLIT_VALIDATION_NAME,
+        #     directory_to_save_files=directory_to_save_results,
+        # )
 
         save_final_results(loss_list_train_epoch, loss_list_validation_epoch, scores_list_train_epoch, scores_list_validation_epoch, directory_to_save_results)
         report = generate_final_checkpoint_report(final_checkpoint_details)

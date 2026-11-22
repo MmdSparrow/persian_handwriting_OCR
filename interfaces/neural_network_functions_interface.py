@@ -7,8 +7,8 @@ __all__ = ["NeuralNetworkFunctionsInterface"]
 
 
 class NeuralNetworkFunctionsInterface(BaseModel):
-    def __init__(self, preprocessed_data_directory, output_directory, verbose=True):
-        super().__init__(preprocessed_data_directory, output_directory, verbose)
+    def __init__(self, dataset_directory, output_directory, verbose=True):
+        super().__init__(dataset_directory, output_directory, verbose)
 
     @log_seperate_line_decorator
     @measure_runtime("Train and validation")
@@ -20,7 +20,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         validation_data_files_names_list,
         batch_size,
         img_splits,
-        ensemble_inference_chunk_size,
         optimizer_name,
         optimizer_hyperparameters_dict,
         scheduler_name,
@@ -40,7 +39,7 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         log_init_info=False,
     ):
         self.create_train_neural_network_required_directories()
-        train_parent = TrainGradientDescentImageSlicing(self._preprocessed_data_directory, self._logger, log_init_info)
+        train_parent = TrainGradientDescentImageSlicing(self._dataset_directory, self._logger, log_init_info)
         train_parent.train(
             model=model,
             epochs_num=epochs_num,
@@ -48,7 +47,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
             validation_data_files_names_list=validation_data_files_names_list,
             batch_size=batch_size,
             img_splits=img_splits,
-            ensemble_inference_chunk_size=ensemble_inference_chunk_size,
             optimizer_name=optimizer_name,
             optimizer_hyperparameters_dict=optimizer_hyperparameters_dict,
             scheduler_name=scheduler_name,
@@ -86,7 +84,7 @@ class NeuralNetworkFunctionsInterface(BaseModel):
     # ):
     #     self.create_train_neural_network_required_directories()
     #     self._logger.info("Continue model training...")
-    #     train_parent = TrainGradientDescentParent(self._preprocessed_data_directory, self._logger, log_init_info)
+    #     train_parent = TrainGradientDescentParent(self._dataset_directory, self._logger, log_init_info)
     #     train_parent.continue_train(
     #         model=model,
     #         checkpoint_directory=checkpoint_directory,
@@ -115,7 +113,7 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         log_init_info=False,
     ):
         self.create_test_required_directories()
-        test_parent = TestGradientDescentParent(self._preprocessed_data_directory, self._logger, log_init_info)
+        test_parent = TestGradientDescentParent(self._dataset_directory, self._logger, log_init_info)
         test_parent.test(
             model=model,
             test_data_files_names_list=test_data_files_names_list,

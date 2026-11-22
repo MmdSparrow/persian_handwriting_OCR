@@ -1,8 +1,8 @@
 import json
 
 __all__ = [
+    "generate_dataset_info_file",
     "load_dataset_info",
-    "store_dataset_info",
 ]
 
 
@@ -13,7 +13,7 @@ __MAXIMUM_LABEL_LENGTH_KEY = "maximum_label_length"
 __DATASET_INFO_FILE_NAME = "dataset_info.json"
 
 
-def store_dataset_info(
+def generate_dataset_info_file(
     images_format,
     images_directory,
     maximum_label_length,

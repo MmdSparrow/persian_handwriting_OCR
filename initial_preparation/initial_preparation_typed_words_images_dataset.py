@@ -1,11 +1,12 @@
-from info.typed_words_images_info import IMAGES_DIRECTORY, IMAGES_FORMAT
+from info.typed_words_images_info import IMAGES_DIRECTORY, IMAGES_FORMAT, MAXIMUM_LABEL_LENGTH
 
 from ._initial_preparation_parent import InitialPreparationParent
 
 
 class InitialPreparationTypedWrdsImgesDatasets(InitialPreparationParent):
-    __IMAGES_FORMAT = IMAGES_FORMAT
-    __IMAGES_DIRECTORY = IMAGES_DIRECTORY
+    _IMAGES_FORMAT = IMAGES_FORMAT
+    _IMAGES_DIRECTORY = IMAGES_DIRECTORY
+    _MAXIMUM_LABEL_LENGTH = MAXIMUM_LABEL_LENGTH
 
     def __init__(self, dataset_directory, logger):
         super().__init__(dataset_directory, logger)

@@ -51,17 +51,21 @@ class DatasetParent(Dataset):
             dataset_directory,
         )
         df_labels = read_csv_file(dataset_directory)
+        labels = get_data_labels(data_files_names_list, df_labels)
+        # TODO: ADD SOS or EOS IF NEEDED.....
+        labels_lengths = [len(label) for label in labels]
         self.augmentation = augmentation
         self.samples = zip(
             [f"{dataset_directory / images_directory / data_file_name}{images_format}" for data_file_name in data_files_names_list],
-            padding_labels(get_data_labels(data_files_names_list, df_labels), maximum_label_length),
+            padding_labels(labels, maximum_label_length),
+            labels_lengths,
         )
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        sample_path, sample_label = self.samples[idx]
+        sample_path, sample_label, sample_label_length = self.samples[idx]
         data = self.__load_image_func(sample_path)
         data = self.__dataset_specific_preprocesses(
             data,
@@ -77,7 +81,7 @@ class DatasetParent(Dataset):
         data = torch.from_numpy(data)
         if self.augmentation is not None:
             data = self.augmentation(data)
-        return data.float(), sample_label
+        return data.float(), sample_label, sample_label_length
 
     def _log_chosen_preprocesses_info(
         self,

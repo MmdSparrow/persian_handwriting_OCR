@@ -8,3 +8,7 @@ def get_one_hot_start_token(batch_size, vocab_length):
     start_token = torch.zeros((batch_size, vocab_length), dtype=torch.double)
     start_token[:, letter_to_index_converter[SOS_CHARACTER]] = 1
     return start_token
+
+
+def get_start_token(batch_size):
+    return torch.full((batch_size, 1), letter_to_index_converter[SOS_CHARACTER], dtype=torch.long)

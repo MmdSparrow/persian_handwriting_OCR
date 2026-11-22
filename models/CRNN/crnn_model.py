@@ -1,7 +1,7 @@
 from torch import nn
 
 
-class CRNN(nn.Module):
+class CRNNModel(nn.Module):
     def __init__(self, num_classes, hidden_size=128, input_channels=1):
         super().__init__()
 

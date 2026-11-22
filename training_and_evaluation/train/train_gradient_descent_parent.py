@@ -486,73 +486,76 @@ class TrainGradientDescentParent(TrainParent):
             batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
                 probabilities_batch, labels_batch, scores_functions_dict
             )
-            # log
-            if train_batch_log_threshold is not None and batch_index % train_batch_log_threshold == 0:
-                report = generate_report_per_batch(
-                    batch_scores_dict=batch_scores_dict,
-                    batch_loss=loss.item(),
-                    batch_index=batch_index,
-                    batches_num=train_batches_num,
-                    split=SPLIT_TRAIN_NAME,
-                )
-                self._logger.info(report)
-            if (
-                train_epoch_and_batch_sample_threshold is not None
-                and epoch_index % train_epoch_and_batch_sample_threshold[0] == 0
-                and batch_index % train_epoch_and_batch_sample_threshold[1] == 0
-            ):
-                batch_size = eegs_batch.shape[0]
-                random_index = torch.randint(0, batch_size, (1,)).item()
-                sample = eegs_batch[random_index].detach()
-                sample_true_label = labels_batch[random_index].detach()
-                sample_predicted_label = predictions_batch[random_index]
-                channel_importance = compute_integrated_gradients(
-                    model=model,
-                    x=sample,
-                    target_class=1,
-                )
-                channel_importance = channel_importance.detach().cpu()
-                if channel_importance.ndim == 2:
-                    channel_importance = concatenate_hemispharer_based_separated_channels(
-                        channel_importance[0],
-                        channel_importance[1],
-                    )
+            
+            
+            
+            # # log
+            # if train_batch_log_threshold is not None and batch_index % train_batch_log_threshold == 0:
+            #     report = generate_report_per_batch(
+            #         batch_scores_dict=batch_scores_dict,
+            #         batch_loss=loss.item(),
+            #         batch_index=batch_index,
+            #         batches_num=train_batches_num,
+            #         split=SPLIT_TRAIN_NAME,
+            #     )
+            #     self._logger.info(report)
+            # if (
+            #     train_epoch_and_batch_sample_threshold is not None
+            #     and epoch_index % train_epoch_and_batch_sample_threshold[0] == 0
+            #     and batch_index % train_epoch_and_batch_sample_threshold[1] == 0
+            # ):
+            #     batch_size = eegs_batch.shape[0]
+            #     random_index = torch.randint(0, batch_size, (1,)).item()
+            #     sample = eegs_batch[random_index].detach()
+            #     sample_true_label = labels_batch[random_index].detach()
+            #     sample_predicted_label = predictions_batch[random_index]
+            #     channel_importance = compute_integrated_gradients(
+            #         model=model,
+            #         x=sample,
+            #         target_class=1,
+            #     )
+            #     channel_importance = channel_importance.detach().cpu()
+            #     if channel_importance.ndim == 2:
+            #         channel_importance = concatenate_hemispharer_based_separated_channels(
+            #             channel_importance[0],
+            #             channel_importance[1],
+            #         )
 
-                ch_names = dataloader_train.dataset.get_selected_channels()
-                channel_importance = channel_importance.numpy()
-                n_channels = len(channel_importance)
-                sorted_channel_indices = np.argsort(channel_importance)[::-1]
-                first_20_percent_count = int(np.ceil(0.20 * n_channels))
-                second_20_percent_count = int(np.ceil(0.20 * n_channels))
-                first_20_percent_indices = sorted_channel_indices[:first_20_percent_count]
-                second_20_percent_indices = sorted_channel_indices[first_20_percent_count : first_20_percent_count + second_20_percent_count]
+            #     ch_names = dataloader_train.dataset.get_selected_channels()
+            #     channel_importance = channel_importance.numpy()
+            #     n_channels = len(channel_importance)
+            #     sorted_channel_indices = np.argsort(channel_importance)[::-1]
+            #     first_20_percent_count = int(np.ceil(0.20 * n_channels))
+            #     second_20_percent_count = int(np.ceil(0.20 * n_channels))
+            #     first_20_percent_indices = sorted_channel_indices[:first_20_percent_count]
+            #     second_20_percent_indices = sorted_channel_indices[first_20_percent_count : first_20_percent_count + second_20_percent_count]
 
-                is_correct_prediction = sample_predicted_label == sample_true_label
-                if is_correct_prediction:
-                    first_20_percent_counter = self._first_20_percent_channels_count_train_true_predictions
-                    second_20_percent_counter = self._second_20_percent_channels_count_train_true_predictions
-                    self._total_train_true_predictions_samples += 1
-                else:
-                    first_20_percent_counter = self._first_20_percent_channels_count_train_false_predictions
-                    second_20_percent_counter = self._second_20_percent_channels_count_train_false_predictions
-                    self._total_train_false_predictions_samples += 1
+            #     is_correct_prediction = sample_predicted_label == sample_true_label
+            #     if is_correct_prediction:
+            #         first_20_percent_counter = self._first_20_percent_channels_count_train_true_predictions
+            #         second_20_percent_counter = self._second_20_percent_channels_count_train_true_predictions
+            #         self._total_train_true_predictions_samples += 1
+            #     else:
+            #         first_20_percent_counter = self._first_20_percent_channels_count_train_false_predictions
+            #         second_20_percent_counter = self._second_20_percent_channels_count_train_false_predictions
+            #         self._total_train_false_predictions_samples += 1
 
-                for channel_index in first_20_percent_indices:
-                    first_20_percent_counter[ch_names[channel_index]] += 1
-                for channel_index in second_20_percent_indices:
-                    second_20_percent_counter[ch_names[channel_index]] += 1
+            #     for channel_index in first_20_percent_indices:
+            #         first_20_percent_counter[ch_names[channel_index]] += 1
+            #     for channel_index in second_20_percent_indices:
+            #         second_20_percent_counter[ch_names[channel_index]] += 1
 
-                VisualizerParent.visualize_channels_importance_on_2d_head(
-                    channel_scores=channel_importance,
-                    split=SPLIT_TRAIN_NAME,
-                    file_name=self._train_sample_index,
-                    montage_name=dataloader_train.dataset.get_montage_name(),
-                    ch_names=dataloader_train.dataset.get_selected_channels(),
-                    true_label=sample_true_label,
-                    predicted_label=sample_predicted_label,
-                    directory_to_save_figure=directory_to_save_samples,
-                )
-                self._train_sample_index += 1
+            #     VisualizerParent.visualize_channels_importance_on_2d_head(
+            #         channel_scores=channel_importance,
+            #         split=SPLIT_TRAIN_NAME,
+            #         file_name=self._train_sample_index,
+            #         montage_name=dataloader_train.dataset.get_montage_name(),
+            #         ch_names=dataloader_train.dataset.get_selected_channels(),
+            #         true_label=sample_true_label,
+            #         predicted_label=sample_predicted_label,
+            #         directory_to_save_figure=directory_to_save_samples,
+            #     )
+            #     self._train_sample_index += 1
         avg_total_loss_train = sum(loss_batch_list) / train_batches_num
         outputs_logit_list = torch.stack(outputs_logit_list)
         labels_list = torch.stack(labels_list)
@@ -599,72 +602,72 @@ class TrainGradientDescentParent(TrainParent):
                     probabilities_batch, labels_batch, scores_functions_dict
                 )
                 # log
-                if validation_batch_log_threshold is not None and batch_index % validation_batch_log_threshold == 0:
-                    report = generate_report_per_batch(
-                        batch_scores_dict=batch_scores_dict,
-                        batch_loss=loss.item(),
-                        batch_index=batch_index,
-                        batches_num=validation_batches_num,
-                        split=SPLIT_VALIDATION_NAME,
-                    )
-                    self._logger.info(report)
-                if (
-                    validation_epoch_and_batch_sample_threshold is not None
-                    and epoch_index % validation_epoch_and_batch_sample_threshold[0] == 0
-                    and batch_index % validation_epoch_and_batch_sample_threshold[1] == 0
-                ):
-                    batch_size = eegs_batch.shape[0]
-                    random_index = torch.randint(0, batch_size, (1,)).item()
-                    sample = eegs_batch[random_index].detach()
-                    sample_true_label = labels_batch[random_index].detach()
-                    sample_predicted_label = predictions_batch[random_index]
-                    channel_importance = compute_integrated_gradients(
-                        model=model,
-                        x=sample,
-                        target_class=1,
-                    )
-                    channel_importance = channel_importance.detach().cpu()
-                    if channel_importance.ndim == 2:
-                        channel_importance = concatenate_hemispharer_based_separated_channels(
-                            channel_importance[0],
-                            channel_importance[1],
-                        )
+                # if validation_batch_log_threshold is not None and batch_index % validation_batch_log_threshold == 0:
+                #     report = generate_report_per_batch(
+                #         batch_scores_dict=batch_scores_dict,
+                #         batch_loss=loss.item(),
+                #         batch_index=batch_index,
+                #         batches_num=validation_batches_num,
+                #         split=SPLIT_VALIDATION_NAME,
+                #     )
+                #     self._logger.info(report)
+                # if (
+                #     validation_epoch_and_batch_sample_threshold is not None
+                #     and epoch_index % validation_epoch_and_batch_sample_threshold[0] == 0
+                #     and batch_index % validation_epoch_and_batch_sample_threshold[1] == 0
+                # ):
+                #     batch_size = eegs_batch.shape[0]
+                #     random_index = torch.randint(0, batch_size, (1,)).item()
+                #     sample = eegs_batch[random_index].detach()
+                #     sample_true_label = labels_batch[random_index].detach()
+                #     sample_predicted_label = predictions_batch[random_index]
+                #     channel_importance = compute_integrated_gradients(
+                #         model=model,
+                #         x=sample,
+                #         target_class=1,
+                #     )
+                #     channel_importance = channel_importance.detach().cpu()
+                #     if channel_importance.ndim == 2:
+                #         channel_importance = concatenate_hemispharer_based_separated_channels(
+                #             channel_importance[0],
+                #             channel_importance[1],
+                #         )
 
-                    ch_names = dataloader_validation.dataset.get_selected_channels()
-                    channel_importance = channel_importance.numpy()
-                    n_channels = len(channel_importance)
-                    sorted_channel_indices = np.argsort(channel_importance)[::-1]
-                    first_20_percent_count = int(np.ceil(0.20 * n_channels))
-                    second_20_percent_count = int(np.ceil(0.20 * n_channels))
-                    first_20_percent_indices = sorted_channel_indices[:first_20_percent_count]
-                    second_20_percent_indices = sorted_channel_indices[first_20_percent_count : first_20_percent_count + second_20_percent_count]
+                #     ch_names = dataloader_validation.dataset.get_selected_channels()
+                #     channel_importance = channel_importance.numpy()
+                #     n_channels = len(channel_importance)
+                #     sorted_channel_indices = np.argsort(channel_importance)[::-1]
+                #     first_20_percent_count = int(np.ceil(0.20 * n_channels))
+                #     second_20_percent_count = int(np.ceil(0.20 * n_channels))
+                #     first_20_percent_indices = sorted_channel_indices[:first_20_percent_count]
+                #     second_20_percent_indices = sorted_channel_indices[first_20_percent_count : first_20_percent_count + second_20_percent_count]
 
-                    is_correct_prediction = sample_predicted_label == sample_true_label
-                    if is_correct_prediction:
-                        first_20_percent_counter = self._first_20_percent_channels_count_validation_true_predictions
-                        second_20_percent_counter = self._second_20_percent_channels_count_validation_true_predictions
-                        self._total_validation_true_predictions_samples += 1
-                    else:
-                        first_20_percent_counter = self._first_20_percent_channels_count_validation_false_predictions
-                        second_20_percent_counter = self._second_20_percent_channels_count_validation_false_predictions
-                        self._total_validation_false_predictions_samples += 1
+                #     is_correct_prediction = sample_predicted_label == sample_true_label
+                #     if is_correct_prediction:
+                #         first_20_percent_counter = self._first_20_percent_channels_count_validation_true_predictions
+                #         second_20_percent_counter = self._second_20_percent_channels_count_validation_true_predictions
+                #         self._total_validation_true_predictions_samples += 1
+                #     else:
+                #         first_20_percent_counter = self._first_20_percent_channels_count_validation_false_predictions
+                #         second_20_percent_counter = self._second_20_percent_channels_count_validation_false_predictions
+                #         self._total_validation_false_predictions_samples += 1
 
-                    for channel_index in first_20_percent_indices:
-                        first_20_percent_counter[ch_names[channel_index]] += 1
-                    for channel_index in second_20_percent_indices:
-                        second_20_percent_counter[ch_names[channel_index]] += 1
+                #     for channel_index in first_20_percent_indices:
+                #         first_20_percent_counter[ch_names[channel_index]] += 1
+                #     for channel_index in second_20_percent_indices:
+                #         second_20_percent_counter[ch_names[channel_index]] += 1
 
-                    VisualizerParent.visualize_channels_importance_on_2d_head(
-                        channel_scores=channel_importance,
-                        split=SPLIT_VALIDATION_NAME,
-                        file_name=self._validation_sample_index,
-                        montage_name=dataloader_validation.dataset.get_montage_name(),
-                        ch_names=dataloader_validation.dataset.get_selected_channels(),
-                        true_label=sample_true_label,
-                        predicted_label=sample_predicted_label,
-                        directory_to_save_figure=directory_to_save_samples,
-                    )
-                    self._validation_sample_index += 1
+                #     VisualizerParent.visualize_channels_importance_on_2d_head(
+                #         channel_scores=channel_importance,
+                #         split=SPLIT_VALIDATION_NAME,
+                #         file_name=self._validation_sample_index,
+                #         montage_name=dataloader_validation.dataset.get_montage_name(),
+                #         ch_names=dataloader_validation.dataset.get_selected_channels(),
+                #         true_label=sample_true_label,
+                #         predicted_label=sample_predicted_label,
+                #         directory_to_save_figure=directory_to_save_samples,
+                #     )
+                #     self._validation_sample_index += 1
             avg_total_loss_validation = sum(loss_batch_list) / validation_batches_num
             outputs_logit_list = torch.stack(outputs_logit_list)
             labels_list = torch.stack(labels_list)

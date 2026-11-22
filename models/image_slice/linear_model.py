@@ -3,7 +3,7 @@ from torch import nn
 from torch.nn import Module
 
 
-class OCRNet(Module):
+class LinearModel(Module):
     def __init__(self, img_size, hidden_size, enc_dim):
         super().__init__()
         self.hidden_size = hidden_size

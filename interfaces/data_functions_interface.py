@@ -2,10 +2,10 @@ from _base import BaseData
 from split import Splitter
 from utils.interfaces_utils import initial_preparation_class_selector, measure_runtime
 
-__all__ = ["DataFunctionsInterfaceBasicPreprocess"]
+__all__ = ["DataFunctionsInterface"]
 
 
-class DataFunctionsInterfaceBasicPreprocess(BaseData):
+class DataFunctionsInterface(BaseData):
     def __init__(
         self,
         dataset_directory,

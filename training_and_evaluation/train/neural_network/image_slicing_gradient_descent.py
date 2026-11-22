@@ -14,6 +14,7 @@ from constants.common_constants import (
     SPLIT_VALIDATION_NAME,
 )
 from data import DatasetParent
+from info.vocab_info import CHARACTERS_VOCAB
 from utils.experiment_utils.experiment_common_utils import (
     compute_prediction_based_scores,
     compute_probability_based_scores,
@@ -445,6 +446,7 @@ class TrainGradientDescentParent(TrainParent):
     def __train_function(
         self,
         model,
+        img_splits,
         dataloader_train,
         criterion,
         optimizer,
@@ -456,12 +458,64 @@ class TrainGradientDescentParent(TrainParent):
     ):
         train_batches_num = len(dataloader_train)
         model.train()
+        step = int(img_width / img_splits)
+        
+        vocab_length = len(CHARACTERS_VOCAB)
+        
+        
         loss_batch_list = []
         labels_list = []
         outputs_logit_list = []
-        for batch_index, (eegs_batch, labels_batch) in enumerate(dataloader_train):
-            eegs_batch, labels_batch = eegs_batch.to(self._device), labels_batch.to(self._device)
-            output_batch_logit = model(eegs_batch)
+        for batch_index, (images_batch, labels_batch) in enumerate(dataloader_train):
+            images_batch, labels_batch = images_batch.to(self._device), labels_batch.to(self._device)
+            hidden = torch.zeros((1, vocab_length)).double().to(self._device)
+            output = get_start_token()
+            letters = []
+            for j in range(img_splits):
+                output, hidden = model(images_batch[:, :, :, step * (img_splits - j - 1) : step * (img_splits - j)], output, hidden)
+                letters.append(output)
+    
+            predicted_word = torch.cat(letters, dim=1).view(img_splits, 1, vocab_length)
+            target_seq_len = torch.tensor([word.size(1)], dtype=torch.long)
+            
+            if i % 1 == 0:
+                print(tensor_to_word(predicted_word))
+                print(indice_to_word(word.view((1, -1))[0]))
+                print(target_seq_len)
+                print("=" * 20)
+                
+            # compairing the output and word based on CTCLoss
+            loss = criterion(predicted_word, word.view((1, -1)), input_seq_len, target_seq_len)
+            optimizer.zero_grad()
+    
+            loss.backward()
+    
+            optimizer.step()
+    
+            mini_batch_loss += loss.item()
+    
+            if i % mini_batchs == (mini_batchs - 1):
+                print("[%d, %5d] loss: %.5f" % (epoch + 1, i + 1, mini_batch_loss / mini_batchs))
+    
+                loss_values.append(mini_batch_loss)
+    
+                mini_batch_loss = 0
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            output_batch_logit = model(images_batch)
             loss = criterion(output_batch_logit, labels_batch)
             optimizer.zero_grad()
             loss.backward()
@@ -501,9 +555,9 @@ class TrainGradientDescentParent(TrainParent):
                 and epoch_index % train_epoch_and_batch_sample_threshold[0] == 0
                 and batch_index % train_epoch_and_batch_sample_threshold[1] == 0
             ):
-                batch_size = eegs_batch.shape[0]
+                batch_size = images_batch.shape[0]
                 random_index = torch.randint(0, batch_size, (1,)).item()
-                sample = eegs_batch[random_index].detach()
+                sample = images_batch[random_index].detach()
                 sample_true_label = labels_batch[random_index].detach()
                 sample_predicted_label = predictions_batch[random_index]
                 channel_importance = compute_integrated_gradients(

@@ -8,6 +8,7 @@ __all__ = [
 
 __IMAGES_FORMAT_KEY = "images_format"
 __IMAGES_DIRECTORY_KEY = "images_directory"
+__MAXIMUM_LABEL_LENGTH_KEY = "maximum_label_length"
 
 __DATASET_INFO_FILE_NAME = "dataset_info.json"
 
@@ -15,11 +16,13 @@ __DATASET_INFO_FILE_NAME = "dataset_info.json"
 def store_dataset_info(
     images_format,
     images_directory,
+    maximum_label_length,
     directories_to_store_info_file,
 ):
     data = {
         __IMAGES_FORMAT_KEY: images_format,
         __IMAGES_DIRECTORY_KEY: images_directory,
+        __MAXIMUM_LABEL_LENGTH_KEY: maximum_label_length,
     }
     for directory_to_store_info_file in directories_to_store_info_file:
         with open(directory_to_store_info_file / __DATASET_INFO_FILE_NAME, "w") as file_to_write:
@@ -32,4 +35,5 @@ def load_dataset_info(stored_info_file_directory):
         data = json.load(file_to_read)
     images_format = data[__IMAGES_FORMAT_KEY]
     images_directory = data[__IMAGES_DIRECTORY_KEY]
-    return images_format, images_directory
+    maximum_label_length = data[__MAXIMUM_LABEL_LENGTH_KEY]
+    return images_format, images_directory, maximum_label_length

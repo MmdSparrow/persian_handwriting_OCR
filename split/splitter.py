@@ -24,7 +24,7 @@ class Splitter:
         validation_ratio,
         directory_to_store_splits_info_file,
     ):
-        images_format, images_directory = load_dataset_info(dataset_directory)
+        images_format, images_directory, _ = load_dataset_info(dataset_directory)
         self._log_preparation_details(test_ratio, validation_ratio)
         return split_test_and_train_and_validation(
             dataset_directory=dataset_directory,
@@ -43,7 +43,7 @@ class Splitter:
         folds_num,
         directory_to_store_folds_and_splits_info_file,
     ):
-        images_format, images_directory = load_dataset_info(dataset_directory)
+        images_format, images_directory, _ = load_dataset_info(dataset_directory)
         self._log_preparation_details_fold(test_ratio, folds_num)
         return split_stratified_folds(
             dataset_directory=dataset_directory,

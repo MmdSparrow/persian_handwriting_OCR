@@ -33,7 +33,6 @@ __all__ = [
     "compute_prediction_based_scores",
     "compute_probability_based_scores",
     "score_functions_selector",
-    "store_channel_importance_counts",
 ]
 
 
@@ -88,60 +87,3 @@ def compute_probability_based_scores(probabilities, labels, scores_functions_dic
             scores[score_name] = score_function(**context)
     return scores
 
-
-def store_channel_importance_counts(
-    first_20_percent_channels_count_true_prediction,
-    second_20_percent_channels_count_true_prediction,
-    first_20_percent_channels_count_false_prediction,
-    second_20_percent_channels_count_false_prediction,
-    total_samples_true_prediction,
-    total_samples_flase_prediction,
-    split_name,
-    directory_to_save_files,
-):
-    with open(directory_to_save_files / split_name / "channels_importance_counts.txt", "w") as file_to_write:
-        __write_channel_importance_counts_in_file(
-            channels_count=first_20_percent_channels_count_true_prediction,
-            is_first=True,
-            is_prediction_true=True,
-            total_samples=total_samples_true_prediction,
-            file_to_write=file_to_write,
-        )
-        __write_channel_importance_counts_in_file(
-            channels_count=second_20_percent_channels_count_true_prediction,
-            is_first=False,
-            is_prediction_true=True,
-            total_samples=total_samples_true_prediction,
-            file_to_write=file_to_write,
-        )
-        __write_channel_importance_counts_in_file(
-            channels_count=first_20_percent_channels_count_false_prediction,
-            is_first=True,
-            is_prediction_true=False,
-            total_samples=total_samples_flase_prediction,
-            file_to_write=file_to_write,
-        )
-        __write_channel_importance_counts_in_file(
-            channels_count=second_20_percent_channels_count_false_prediction,
-            is_first=False,
-            is_prediction_true=False,
-            total_samples=total_samples_flase_prediction,
-            file_to_write=file_to_write,
-        )
-
-
-def __write_channel_importance_counts_in_file(
-    channels_count,
-    is_first,
-    is_prediction_true,
-    total_samples,
-    file_to_write,
-):
-
-    first_or_second_str = "First" if is_first else "second"
-    file_to_write.write(f"{first_or_second_str} 20% Most Important Channels - {is_prediction_true} Prediction\n")
-    file_to_write.write("=" * 50 + "\n")
-
-    for channel, count in channels_count.most_common():
-        percentage = 100 * count / total_samples
-        file_to_write.write(f"{channel:<10}{count:<10}{percentage:>8.2f}%\n")

@@ -7,6 +7,7 @@ from utils.load_and_store_dataset_labels_utils import generate_data_labels_csv_f
 class InitialPreparationParent(ABC):
     __IMAGES_FORMAT = None
     __IMAGES_DIRECTORY = None
+    __MAXIMUM_LABEL_LENGTH= None
 
     def __init__(self, dataset_directory, logger):
         super().__init__()
@@ -30,6 +31,7 @@ class InitialPreparationParent(ABC):
         store_dataset_info(
             images_format=self.__IMAGES_FORMAT,
             images_directory=self.__IMAGES_DIRECTORY,
+            maximum_label_length=self.__MAXIMUM_LABEL_LENGTH,
             directories_to_store_info_file=self._dataset_directory,
         )
         self._generate_data_labels()

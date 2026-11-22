@@ -1,7 +1,8 @@
 import torch
 from torch import nn
 
-from constants.common_constants import CROSS_ENTROPY_LOSS, FOCAL_LOSS
+from constants.common_constants import CROSS_ENTROPY_LOSS, CTC_LOSS, FOCAL_LOSS
+from info.vocab_info import BLANK_CHARACTER, CHARACTERS_VOCAB
 from utils.experiment_utils.loss_functions import FocalLoss
 
 __all__ = [
@@ -17,6 +18,7 @@ def loss_function_selector(loss_function_name):
     LOSSES_NAME_FUNCTIONS_MAP = {
         CROSS_ENTROPY_LOSS: nn.CrossEntropyLoss(label_smoothing=0.1),
         FOCAL_LOSS: FocalLoss(gamma=2.0),
+        CTC_LOSS: nn.CTCLoss(blank=CHARACTERS_VOCAB.index(BLANK_CHARACTER)),
     }
     try:
         return LOSSES_NAME_FUNCTIONS_MAP[loss_function_name]

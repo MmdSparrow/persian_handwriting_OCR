@@ -21,7 +21,7 @@ class OCRNet(Module):
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x, input, hidden):
-        x = x.reshape((1, -1))
+        # x = x.reshape((1, -1))
         x = self.act(self.fc1(x))
         x = self.act(self.fc2(x))
         x = self.drop(x)

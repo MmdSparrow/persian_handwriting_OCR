@@ -1,4 +1,4 @@
-from info.typed_words_images import IMAGES_DIRECTORY, IMAGES_FORMAT
+from info.typed_words_images_info import IMAGES_DIRECTORY, IMAGES_FORMAT
 
 from ._initial_preparation_parent import InitialPreparationParent
 

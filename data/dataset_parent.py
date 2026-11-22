@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 
 from constants.common_constants import CHOSEN_PREPROCESSES_AND_ITS_HYPERPARAMETERS_DICT, CHOSEN_PREPROCESSES_LIST_IN_ORDER_OF_APPLY
+from utils.data_utils import padding_labels
 from utils.load_and_store_dataset_info import load_dataset_info
 from utils.load_and_store_dataset_labels_utils import get_data_labels, read_csv_file
 from utils.load_and_store_dataset_preprocess_info import store_dataset_preprocesses_info
@@ -37,7 +38,7 @@ class DatasetParent(Dataset):
             preprocesses_and_their_hyperparameters_dict=CHOSEN_PREPROCESSES_AND_ITS_HYPERPARAMETERS_DICT,
             preprocesses_type="common",
         )
-        images_format, images_directory = load_dataset_info(dataset_directory)
+        images_format, images_directory, maximum_label_length = load_dataset_info(dataset_directory)
         self.__load_image_func = image_loader_selector(images_format)
         self.__dataset_specific_preprocesses = dataset_specific_preprocesses
         self.__chosen_dataset_specific_preprocesses_name_list = chosen_dataset_specific_preprocesses_name_list
@@ -53,7 +54,7 @@ class DatasetParent(Dataset):
         self.augmentation = augmentation
         self.samples = zip(
             [f"{dataset_directory / images_directory / data_file_name}{images_format}" for data_file_name in data_files_names_list],
-            get_data_labels(data_files_names_list, df_labels),
+            padding_labels(get_data_labels(data_files_names_list, df_labels), maximum_label_length),
         )
 
     def __len__(self):

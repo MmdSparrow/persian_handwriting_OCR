@@ -1,19 +1,25 @@
 from _base import BaseModel
 from training_and_evaluation import TestGradientDescentParent, TrainGradientDescentParent
 from training_and_evaluation.train.neural_network.train_gradient_descent_image_slicing import TrainGradientDescentImageSlicing
-from utils.interfaces_utils import log_seperate_line_decorator, measure_runtime
+from utils.interfaces_utils import dataset_specific_preprocesses_class_selector, log_seperate_line_decorator, measure_runtime
 
 __all__ = ["NeuralNetworkFunctionsInterface"]
 
 
 class NeuralNetworkFunctionsInterface(BaseModel):
-    def __init__(self, dataset_directory, output_directory, verbose=True):
+    def __init__(self, dataset_directory, output_directory, seed, verbose=True):
         super().__init__(dataset_directory, output_directory, verbose)
+        self.__dataset_name = dataset_directory.name
+        self._seed = seed
 
     @log_seperate_line_decorator
     @measure_runtime("Train and validation")
     def train(
         self,
+        chosen_dataset_specific_preprocesses_name_list,
+        chosen_dataset_specific_preprocesses_hyperparameters_dict,
+        chosen_common_preprocesses_list,
+        chosen_common_preprocesses_hyperparameters_dict,
         model,
         epochs_num,
         train_data_files_names_list,
@@ -39,8 +45,17 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         log_init_info=False,
     ):
         self.create_train_neural_network_required_directories()
-        train_parent = TrainGradientDescentImageSlicing(self._dataset_directory, self._logger, log_init_info)
+        train_parent = TrainGradientDescentImageSlicing(self._dataset_directory, self._outputs_directory, self._logger, self._seed, log_init_info)
+        TypedWordsImagesSpecificPreprocesses = dataset_specific_preprocesses_class_selector(self.__dataset_name)
+        typed_words_images_specific_preprocesses = TypedWordsImagesSpecificPreprocesses(
+            chosen_dataset_specific_preprocesses_name_list,
+            chosen_dataset_specific_preprocesses_hyperparameters_dict,
+            self._logger,
+        )
         train_parent.train(
+            dataset_specific_preprocesses=typed_words_images_specific_preprocesses,
+            chosen_common_preprocesses_list=chosen_common_preprocesses_list,
+            chosen_common_preprocesses_hyperparameters_dict=chosen_common_preprocesses_hyperparameters_dict,
             model=model,
             epochs_num=epochs_num,
             train_data_files_names_list=train_data_files_names_list,

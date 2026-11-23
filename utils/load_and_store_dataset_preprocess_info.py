@@ -9,7 +9,7 @@ __all__ = [
 __CHOSEN_COMMON_PREPROCESSES_LIST_KEY = "chosen_preprocesses_names_list"
 __CHOSEN_COMMON_PREPROCESSES_HYPERPARAMETERS_DICT_KEY = "chosen_common_preprocesses_hyperparameters_dict"
 
-__DATASET_PREPROCESSES_AND_FEATURE_EXTRACTION_FILE_NAME = "preprocess_and_feature_extraction_info.json"
+__DATASET_PREPROCESSES_AND_FEATURE_EXTRACTION_FILE_NAME = "preprocesses_info.json"
 
 
 def store_dataset_preprocesses_info(

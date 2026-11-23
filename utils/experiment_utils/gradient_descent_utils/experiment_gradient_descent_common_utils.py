@@ -41,6 +41,7 @@ def compute_probability(outputs_logit):
     return outputs_logit.softmax(dim=1)[:, 1]
 
 
+# BUG: RNN MODELS GET TWO INPUT (INPUT, HIDDEN)
 def count_parameters(model, dataloader_train):
     device = next(model.parameters()).device
     with torch.no_grad():

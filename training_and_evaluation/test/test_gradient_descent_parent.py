@@ -35,7 +35,7 @@ class TestGradientDescentParent(TestParent):
 
     def __prepare_data(self, batch_size, transform=None):
         dataset_test = DatasetParent(
-            root=self.dataset_directory,
+            root=self._dataset_directory,
             split=SPLIT_TEST_NAME,
             transform=transform,
             augmentation=None,

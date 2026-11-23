@@ -6,6 +6,8 @@ from torch.utils.data import DataLoader
 # from visualizer import VisualizerParent
 from constants.common_constants import (
     ACCURACY_LIMIT,
+    CHOSEN_PREPROCESSES_AND_ITS_HYPERPARAMETERS_DICT,
+    CHOSEN_PREPROCESSES_LIST_IN_ORDER_OF_APPLY,
     EARLY_STOP_ACCURACY_LIMIT,
     EARLY_STOP_LOSS_NO_IMPROVEMENT_EPOCH_LIMIT,
     LOSS_NO_IMPROVEMENT_EPOCH_LIMIT,
@@ -39,6 +41,7 @@ from utils.experiment_utils.gradient_descent_utils.train_gradient_descent_parent
     save_final_results,
     scheduler_selector,
 )
+from utils.load_and_store_dataset_preprocess_info import store_dataset_preprocesses_info
 
 from .._train_parent import TrainParent
 
@@ -46,8 +49,8 @@ __all__ = ["TrainGradientDescentImageSlicing"]
 
 
 class TrainGradientDescentImageSlicing(TrainParent):
-    def __init__(self, dataset_directory, logger, log_init_info):
-        super().__init__(dataset_directory, logger, log_init_info)
+    def __init__(self, dataset_directory, outputs_directory, logger, seed, log_init_info):
+        super().__init__(dataset_directory, outputs_directory, logger, seed, log_init_info)
         if log_init_info:
             self._logger.info("If model has `gradient_clip`, `weight_clip` or `initialize_weights` methods, they are called automatically")
 
@@ -56,22 +59,39 @@ class TrainGradientDescentImageSlicing(TrainParent):
         train_data_files_names_list,
         validation_data_files_names_list,
         dataset_specific_preprocesses,
-        chosen_dataset_specific_preprocesses_name_list,
-        chosen_dataset_specific_preprocesses_hyperparameters,
         chosen_common_preprocesses_list,
         chosen_common_preprocesses_hyperparameters_dict,
         batch_size,
         augmentation,
     ):
+        self._log_chosen_preprocesses_info(
+            chosen_preprocesses_name_list=dataset_specific_preprocesses._chosen_dataset_specific_preprocesses_name_list,
+            chosen_preprocesses_hyperparameters_dict=dataset_specific_preprocesses._chosen_dataset_specific_preprocesses_hyperparameters_dict,
+            preprocesses_name_list_in_order_of_apply=dataset_specific_preprocesses._CHOSEN_DATASET_SPECIFIC_PREPROCESSES_NAME_LIST_IN_ORDER_OF_APPLY,
+            preprocesses_and_their_hyperparameters_dict=dataset_specific_preprocesses._CHOSEN_DATASET_SPECIFIC_PREPROCESSES_AND_ITS_HYPERPARAMETERS_DICT,
+            preprocesses_type="dataset-specific",
+        )
+        self._log_chosen_preprocesses_info(
+            chosen_preprocesses_name_list=chosen_common_preprocesses_list,
+            chosen_preprocesses_hyperparameters_dict=chosen_common_preprocesses_hyperparameters_dict,
+            preprocesses_name_list_in_order_of_apply=CHOSEN_PREPROCESSES_LIST_IN_ORDER_OF_APPLY,
+            preprocesses_and_their_hyperparameters_dict=CHOSEN_PREPROCESSES_AND_ITS_HYPERPARAMETERS_DICT,
+            preprocesses_type="common",
+        )
+        store_dataset_preprocesses_info(
+            chosen_common_preprocesses_list,
+            chosen_common_preprocesses_hyperparameters_dict,
+            [self._dataset_directory, self._outputs_directory],
+        )
+
         dataset_train = DatasetParent(
-            dataset_directory=self.dataset_directory,
+            dataset_directory=self._dataset_directory,
             data_files_names_list=train_data_files_names_list,
             dataset_specific_preprocesses=dataset_specific_preprocesses,
-            chosen_dataset_specific_preprocesses_name_list=chosen_dataset_specific_preprocesses_name_list,
-            chosen_dataset_specific_preprocesses_hyperparameters=chosen_dataset_specific_preprocesses_hyperparameters,
             chosen_common_preprocesses_list=chosen_common_preprocesses_list,
             chosen_common_preprocesses_hyperparameters_dict=chosen_common_preprocesses_hyperparameters_dict,
             augmentation=augmentation,
+            seed=self._seed,
         )
         dataloader_train = DataLoader(
             dataset_train,
@@ -79,14 +99,13 @@ class TrainGradientDescentImageSlicing(TrainParent):
             shuffle=True,
         )
         dataset_validation = DatasetParent(
-            dataset_directory=self.dataset_directory,
+            dataset_directory=self._dataset_directory,
             data_files_names_list=validation_data_files_names_list,
             dataset_specific_preprocesses=dataset_specific_preprocesses,
-            chosen_dataset_specific_preprocesses_name_list=chosen_dataset_specific_preprocesses_name_list,
-            chosen_dataset_specific_preprocesses_hyperparameters=chosen_dataset_specific_preprocesses_hyperparameters,
             chosen_common_preprocesses_list=chosen_common_preprocesses_list,
             chosen_common_preprocesses_hyperparameters_dict=chosen_common_preprocesses_hyperparameters_dict,
             augmentation=None,
+            seed=self._seed,
         )
         dataloader_validation = DataLoader(
             dataset_validation,
@@ -99,8 +118,6 @@ class TrainGradientDescentImageSlicing(TrainParent):
     def train(
         self,
         dataset_specific_preprocesses,
-        chosen_dataset_specific_preprocesses_name_list,
-        chosen_dataset_specific_preprocesses_hyperparameters,
         chosen_common_preprocesses_list,
         chosen_common_preprocesses_hyperparameters_dict,
         model,
@@ -158,8 +175,6 @@ class TrainGradientDescentImageSlicing(TrainParent):
             train_data_files_names_list=train_data_files_names_list,
             validation_data_files_names_list=validation_data_files_names_list,
             dataset_specific_preprocesses=dataset_specific_preprocesses,
-            chosen_dataset_specific_preprocesses_name_list=chosen_dataset_specific_preprocesses_name_list,
-            chosen_dataset_specific_preprocesses_hyperparameters=chosen_dataset_specific_preprocesses_hyperparameters,
             chosen_common_preprocesses_list=chosen_common_preprocesses_list,
             chosen_common_preprocesses_hyperparameters_dict=chosen_common_preprocesses_hyperparameters_dict,
             batch_size=batch_size,
@@ -181,9 +196,10 @@ class TrainGradientDescentImageSlicing(TrainParent):
             self._logger.info("MODEL ARCHITECTURE")
             self._logger.info("-" * 80)
             self._logger.info("\n%s", model)
-            total_params, trainable_params = count_parameters(model, dataloader_train)
-            self._logger.info(f"Total parameters:     {total_params:,}")
-            self._logger.info(f"Trainable parameters: {trainable_params:,}")
+            # BUG: FIX THIS
+            # total_params, trainable_params = count_parameters(model, dataloader_train)
+            # self._logger.info(f"Total parameters:     {total_params:,}")
+            # self._logger.info(f"Trainable parameters: {trainable_params:,}")
             self._logger.info("-" * 80)
             if hasattr(model, "initialize_weights"):
                 self._logger.info("Model use implemented initialize weight function")

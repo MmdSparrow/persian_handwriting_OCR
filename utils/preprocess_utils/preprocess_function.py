@@ -45,6 +45,7 @@ def apply_preprocesses(
         pass
     if PREPROCESS_NORMALIZE_PIXEL_VALUES in chosen_common_preprocesses_list:
         image = image.astype(np.float32) / 255.0
+    return image
     # # Add channel dimension
     # tensor = tensor.unsqueeze(0)
 

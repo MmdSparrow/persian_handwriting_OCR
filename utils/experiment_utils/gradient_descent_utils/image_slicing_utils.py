@@ -12,3 +12,18 @@ def get_one_hot_start_token(batch_size, vocab_length):
 
 def get_start_token(batch_size):
     return torch.full((batch_size, 1), letter_to_index_converter[SOS_CHARACTER], dtype=torch.long)
+
+
+def ctc_clean(letters_indexes_list):
+    pass
+
+# def clean_ctc(s):
+#     # remove repeated
+#     word = ""
+#     prev = ""
+#     for c in s:
+#         if c != prev:
+#             word += c
+#         prev = c
+#     word = re.sub("[\-SE]", "", word)
+#     return word

@@ -4,8 +4,6 @@ from torch.utils.data import DataLoader
 from constants.common_constants import SPLIT_TEST_NAME
 from data import DatasetParent
 from utils.experiment_utils.experiment_common_utils import (
-    compute_prediction_based_scores,
-    compute_probability_based_scores,
     score_functions_selector,
 )
 from utils.experiment_utils.gradient_descent_utils.checkpoint_utils import load_final_checkpoint
@@ -170,21 +168,22 @@ class TestGradientDescentParent(TestParent):
                 labels_list.extend(labels_batch)
                 outputs_logit_list.extend(output_batch_logit)
 
-                predictions_batch = compute_prediction(output_batch_logit)
-                probabilities_batch = compute_probability(output_batch_logit)
-                batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
-                    probabilities_batch, labels_batch, scores_functions_dict
-                )
-                # log
-                if test_batch_log_threshold is not None and batch_index % test_batch_log_threshold == 0:
-                    report = generate_report_per_batch(
-                        batch_scores_dict=batch_scores_dict,
-                        batch_loss=loss.item(),
-                        batch_index=batch_index,
-                        batches_num=test_batches_num,
-                        split=SPLIT_TEST_NAME,
-                    )
-                    self._logger.info(report)
+                # predictions_batch = compute_prediction(output_batch_logit)
+                # probabilities_batch = compute_probability(output_batch_logit)
+                # batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
+                #     probabilities_batch, labels_batch, scores_functions_dict
+                # )
+                # # log
+                # if test_batch_log_threshold is not None and batch_index % test_batch_log_threshold == 0:
+                #     report = generate_report_per_batch(
+                #         batch_scores_dict=batch_scores_dict,
+                #         batch_loss=loss.item(),
+                #         batch_index=batch_index,
+                #         batches_num=test_batches_num,
+                #         split=SPLIT_TEST_NAME,
+                #     )
+                #     self._logger.info(report)
+                
                 # if batch_index % test_batch_sample_threshold == 0:
                 #     sample_predicted_label = predictions_batch[0]
                 #     channel_importance = compute_integrated_gradients(
@@ -214,12 +213,12 @@ class TestGradientDescentParent(TestParent):
         labels_list = torch.stack(labels_list)
         predictions_epoch = compute_prediction(outputs_logit_list)
         probabilities_epoch = compute_probability(outputs_logit_list)
-        epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
-            probabilities_epoch, labels_list, scores_functions_dict
-        )
-        save_final_results(avg_total_loss, epoch_scores_dict, directory_to_save_results)
-        report = generate_final_report(epoch_scores_dict, avg_total_loss)
-        self._logger.info(report)
+        # epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
+        #     probabilities_epoch, labels_list, scores_functions_dict
+        # )
+        # save_final_results(avg_total_loss, epoch_scores_dict, directory_to_save_results)
+        # report = generate_final_report(epoch_scores_dict, avg_total_loss)
+        # self._logger.info(report)
 
     def __ensemble_test_function(
         self,
@@ -299,9 +298,9 @@ class TestGradientDescentParent(TestParent):
         outputs_logit_list = torch.stack(outputs_logit_list)
         labels_list = torch.stack(labels_list)
         probabilities_epoch = compute_probability(outputs_logit_list)
-        epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
-            probabilities_epoch, labels_list, scores_functions_dict
-        )
-        save_final_results(avg_total_loss, epoch_scores_dict, directory_to_save_results)
-        report = generate_final_report(epoch_scores_dict, avg_total_loss)
-        self._logger.info(report)
+        # epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
+        #     probabilities_epoch, labels_list, scores_functions_dict
+        # )
+        # save_final_results(avg_total_loss, epoch_scores_dict, directory_to_save_results)
+        # report = generate_final_report(epoch_scores_dict, avg_total_loss)
+        # self._logger.info(report)

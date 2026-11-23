@@ -1,76 +1,53 @@
-import math
-
-import numpy as np
-from sklearn.metrics import (
-    balanced_accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    roc_auc_score,
-)
+# from jiwer import cer, wer
 
 __all__ = [
-    "accuracy_calculator",
-    "auc_score_calculator",
-    "balanced_accuracy_calculator",
-    "f1_score_calculator",
-    "macro_f1_score_calculator",
-    "macro_precision_calculator",
-    "macro_recall_calculator",
-    "precision_calculator",
-    "sensitivity_calculator",
-    "specificity_calculator",
-    "weighted_f1_calculator",
+    "character_accuracy_calculator",
+    "character_error_rate_calculator",
+    "word_accuracy_calculator",
+    "word_error_rate_calculator",
 ]
 
 
-def __not_sample_class_handler(numerator: float, denominator: float) -> float:
-    return numerator / denominator if denominator != 0 else math.nan
+# def character_error_rate_calculator(ground_truth, predictions):
+#     return cer(ground_truth, predictions)
 
 
-def accuracy_calculator(tp, tn, fp, fn, **_) -> float:
-    return __not_sample_class_handler(tp + tn, tp + tn + fp + fn)
+# def word_error_rate_calculator(ground_truth, predictions):
+#     return wer(ground_truth, predictions)
 
 
-def sensitivity_calculator(tp, fn, **_) -> float:
-    return __not_sample_class_handler(tp, tp + fn)
+def character_error_rate_calculator(ground_truth, predictions):
+    total_errors = 0
+    total_characters = 0
+    for gt, pred in zip(ground_truth, predictions):
+        total_errors += __levenshtein_distance(gt, pred)
+        total_characters += len(gt)
+    return total_errors / total_characters if total_characters else 0.0
 
 
-def specificity_calculator(tn, fp, **_) -> float:
-    return __not_sample_class_handler(tn, tn + fp)
+def word_error_rate_calculator(ground_truth, predictions):
+    if not ground_truth:
+        return 0.0
+    errors = sum(gt != pred for gt, pred in zip(ground_truth, predictions))
+    return errors / len(ground_truth)
 
 
-def precision_calculator(tp, fp, **_) -> float:
-    return __not_sample_class_handler(tp, tp + fp)
+def character_accuracy_calculator(ground_truth, predictions):
+    return 1 - character_error_rate_calculator(ground_truth, predictions)
 
 
-def f1_score_calculator(tp, fp, fn, **_) -> float:
-    return __not_sample_class_handler(2 * tp, 2 * tp + fp + fn)
+def word_accuracy_calculator(ground_truth, predictions):
+    return 1 - word_error_rate_calculator(ground_truth, predictions)
 
 
-def auc_score_calculator(labels, probabilities, **_) -> float:
-    labels = labels.numpy()
-    labels = np.asarray(labels)
-    if np.unique(labels).size < 2:
-        return math.nan
-    return roc_auc_score(labels, probabilities)
-
-
-def balanced_accuracy_calculator(labels, predictions):
-    balanced_accuracy_score(labels, predictions)
-
-
-def macro_f1_score_calculator(labels, predictions):
-    return f1_score(labels, predictions, average="macro", zero_division=0)
-
-
-def weighted_f1_score_calculator(labels, predictions):
-    return f1_score(labels, predictions, average="weighted", zero_division=0)
-
-
-def macro_recall_calculator(labels, predictions):
-    return recall_score(labels, predictions, average="macro", zero_division=0)
-
-
-def macro_precision_calculator(labels, predictions):
-    return precision_score(labels, predictions, average="macro", zero_division=0)
+def __levenshtein_distance(seq1, seq2):
+    previous_row = list(range(len(seq2) + 1))
+    for i, item1 in enumerate(seq1):
+        current_row = [i + 1]
+        for j, item2 in enumerate(seq2):
+            insertions = current_row[j] + 1
+            deletions = previous_row[j + 1] + 1
+            substitutions = previous_row[j] + (item1 != item2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    return previous_row[-1]

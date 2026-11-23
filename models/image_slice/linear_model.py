@@ -2,22 +2,27 @@ import torch
 from torch import nn
 from torch.nn import Module
 
+from info.vocab_info import VOCAB_LETTERS_INDEXES_DICT
+
 
 class LinearModel(Module):
-    def __init__(self, img_size, hidden_size, enc_dim):
+    def __init__(
+        self,
+        input_size,
+        HL1=len(VOCAB_LETTERS_INDEXES_DICT),  # noqa: B008
+        HL2 = 200,
+        output_dim=len(VOCAB_LETTERS_INDEXES_DICT),  # noqa: B008
+    ):
         super().__init__()
-        self.hidden_size = hidden_size
-        self.img_size = img_size
-        self.enc_img_size = 200
-        self.fc1 = nn.Linear(self.img_size, 450)
-        self.fc2 = nn.Linear(450, self.enc_img_size)
+        self.fc1 = nn.Linear(input_size, 450)
+        self.fc2 = nn.Linear(450, HL2)
         self.drop = nn.Dropout(p=0.1)
         self.act = nn.CELU()
-        self.i2h = nn.Linear(self.enc_img_size + enc_dim + self.hidden_size, 80)
+        self.i2h = nn.Linear(HL2 + output_dim + HL1, 80)
         self.h2h = nn.Linear(80, 60)
-        self.h2h2 = nn.Linear(60, self.hidden_size)
-        self.i2o = nn.Linear(self.enc_img_size + enc_dim + self.hidden_size, 200)
-        self.o2o = nn.Linear(200, enc_dim)
+        self.h2h2 = nn.Linear(60, HL1)
+        self.i2o = nn.Linear(HL2 + output_dim + HL1, 200)
+        self.o2o = nn.Linear(200, output_dim)
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x, input, hidden):

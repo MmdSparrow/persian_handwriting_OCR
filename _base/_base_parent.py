@@ -14,11 +14,11 @@ class BaseParent:
     def __create_outputs_directory(self, outputs_directory):
         if outputs_directory is None:
             self._outputs_directory_name = datetime.now().astimezone().strftime("%Y-%m-%d_%H-%M-%S")
-            self._outputs_directory_name = OUTPUTS_MAIN_DIRECTORY_NAME / self._outputs_directory_name
+            self._outputs_directory = OUTPUTS_MAIN_DIRECTORY_NAME / self._outputs_directory_name
         else:
-            self._outputs_directory_name = Path(outputs_directory)
+            self._outputs_directory = Path(outputs_directory)
 
-        self._log_directory = self._outputs_directory_name / LOGS_DIRECTORY_NAME
+        self._log_directory = self._outputs_directory / LOGS_DIRECTORY_NAME
         os.makedirs(self._log_directory, exist_ok=True)
 
     def __init_logger(self, verbose):

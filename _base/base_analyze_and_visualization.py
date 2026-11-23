@@ -16,12 +16,12 @@ class BaseAnalyzeAndVisualization(BaseParent):
         super().__init__(verbose, outputs_directory)
 
     def __create_visualizations_directory(self):
-        self._results_directory = self._outputs_directory_name / RESULTS_DIRECTORY_NAME
+        self._results_directory = self._outputs_directory / RESULTS_DIRECTORY_NAME
         self._visulizations_directory = self._results_directory / VISUALIZATIONS_DIRECTORY_NAME
         os.makedirs(self._visulizations_directory, exist_ok=True)
 
     def __create_analyzes_directory(self):
-        self._analyzes_directory = self._outputs_directory_name / ANALYZE_DIRECTORY_NAME
+        self._analyzes_directory = self._outputs_directory / ANALYZE_DIRECTORY_NAME
         os.makedirs(self._analyzes_directory, exist_ok=True)
 
     def create_required_analyze_raw_and_preprocessed_data_directory(self, dataset_directory):

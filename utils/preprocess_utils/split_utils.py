@@ -1,12 +1,11 @@
 import numpy as np
-from sklearn.model_selection import LeaveOneOut, StratifiedKFold, train_test_split
+from sklearn.model_selection import KFold, LeaveOneOut, train_test_split
 
 from constants.common_constants import SPLIT_TRAIN_NAME, SPLIT_VALIDATION_NAME
-
-from .store_folds_and_split_info import store_folds_info, store_train_validation_test_splits_info
+from utils.load_and_store_folds_and_split_info import store_folds_info, store_train_validation_test_splits_info
 
 __all__ = [
-    "split_stratified_folds",
+    "split_folds",
     "split_test_and_train_and_validation",
 ]
 
@@ -42,7 +41,7 @@ def split_test_and_train_and_validation(
     return splits_info_file_path
 
 
-def split_stratified_folds(
+def split_folds(
     dataset_directory,
     images_directory,
     images_format,
@@ -79,7 +78,7 @@ def __folds_split_func(
     if folds_num == "all":
         splitter = LeaveOneOut()
     else:
-        splitter = StratifiedKFold(
+        splitter = KFold(
             n_splits=folds_num,
             shuffle=True,
             random_state=seed,

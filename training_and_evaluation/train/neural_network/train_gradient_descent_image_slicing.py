@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader
 # from visualizer import VisualizerParent
 from constants.common_constants import (
     ACCURACY_LIMIT,
-    ACCURACY_SCORE_NAME,
     EARLY_STOP_ACCURACY_LIMIT,
     EARLY_STOP_LOSS_NO_IMPROVEMENT_EPOCH_LIMIT,
     LOSS_NO_IMPROVEMENT_EPOCH_LIMIT,
@@ -18,8 +17,8 @@ from data import DatasetParent
 from info.vocab_info import VOCAB_LETTERS_INDEXES_DICT
 from utils.character_index_converter import letter_to_index_converter
 from utils.experiment_utils.experiment_common_utils import (
-    compute_prediction_based_scores,
-    compute_probability_based_scores,
+    # compute_prediction_based_scores,
+    # compute_probability_based_scores,
     score_functions_selector,
     # store_channel_importance_counts,
 )
@@ -410,12 +409,12 @@ class TrainGradientDescentImageSlicing(TrainParent):
             else:
                 no_improvement_counter += 1
             # early stop methods
-            if (
-                EARLY_STOP_ACCURACY_LIMIT in early_stop_methods
-                and epoch_scores_dict_validation[ACCURACY_SCORE_NAME] > early_stop_methods_hyperparameters[ACCURACY_LIMIT]
-            ):
-                self._logger.info(f"Early stopping triggered: accuracy threshold {early_stop_methods_hyperparameters[ACCURACY_LIMIT]} reached")
-                break
+            # if (
+            #     EARLY_STOP_ACCURACY_LIMIT in early_stop_methods
+            #     and epoch_scores_dict_validation[ACCURACY_SCORE_NAME] > early_stop_methods_hyperparameters[ACCURACY_LIMIT]
+            # ):
+            #     self._logger.info(f"Early stopping triggered: accuracy threshold {early_stop_methods_hyperparameters[ACCURACY_LIMIT]} reached")
+            #     break
             if (
                 EARLY_STOP_LOSS_NO_IMPROVEMENT_EPOCH_LIMIT in early_stop_methods
                 and no_improvement_counter > early_stop_methods_hyperparameters[LOSS_NO_IMPROVEMENT_EPOCH_LIMIT]

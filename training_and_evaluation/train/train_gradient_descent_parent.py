@@ -5,7 +5,6 @@ from torch.utils.data import DataLoader
 # from visualizer import VisualizerParent
 from constants.common_constants import (
     ACCURACY_LIMIT,
-    ACCURACY_SCORE_NAME,
     EARLY_STOP_ACCURACY_LIMIT,
     EARLY_STOP_LOSS_NO_IMPROVEMENT_EPOCH_LIMIT,
     LOSS_NO_IMPROVEMENT_EPOCH_LIMIT,
@@ -15,8 +14,8 @@ from constants.common_constants import (
 )
 from data import DatasetParent
 from utils.experiment_utils.experiment_common_utils import (
-    compute_prediction_based_scores,
-    compute_probability_based_scores,
+    # compute_prediction_based_scores,
+    # compute_probability_based_scores,
     score_functions_selector,
     # store_channel_importance_counts,
 )
@@ -401,12 +400,12 @@ class TrainGradientDescentParent(TrainParent):
             else:
                 no_improvement_counter += 1
             # early stop methods
-            if (
-                EARLY_STOP_ACCURACY_LIMIT in early_stop_methods
-                and epoch_scores_dict_validation[ACCURACY_SCORE_NAME] > early_stop_methods_hyperparameters[ACCURACY_LIMIT]
-            ):
-                self._logger.info(f"Early stopping triggered: accuracy threshold {early_stop_methods_hyperparameters[ACCURACY_LIMIT]} reached")
-                break
+            # if (
+            #     EARLY_STOP_ACCURACY_LIMIT in early_stop_methods
+            #     and epoch_scores_dict_validation[ACCURACY_SCORE_NAME] > early_stop_methods_hyperparameters[ACCURACY_LIMIT]
+            # ):
+            #     self._logger.info(f"Early stopping triggered: accuracy threshold {early_stop_methods_hyperparameters[ACCURACY_LIMIT]} reached")
+            #     break
             if (
                 EARLY_STOP_LOSS_NO_IMPROVEMENT_EPOCH_LIMIT in early_stop_methods
                 and no_improvement_counter > early_stop_methods_hyperparameters[LOSS_NO_IMPROVEMENT_EPOCH_LIMIT]
@@ -483,9 +482,9 @@ class TrainGradientDescentParent(TrainParent):
 
             predictions_batch = compute_prediction(output_batch_logit)
             probabilities_batch = compute_probability(output_batch_logit)
-            batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
-                probabilities_batch, labels_batch, scores_functions_dict
-            )
+            # batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
+            #     probabilities_batch, labels_batch, scores_functions_dict
+            # )
             
             
             
@@ -561,10 +560,11 @@ class TrainGradientDescentParent(TrainParent):
         labels_list = torch.stack(labels_list)
         predictions_epoch = compute_prediction(outputs_logit_list)
         probabilities_epoch = compute_probability(outputs_logit_list)
-        epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
-            probabilities_epoch, labels_list, scores_functions_dict
-        )
-        return avg_total_loss_train, epoch_scores_dict
+        # epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
+        #     probabilities_epoch, labels_list, scores_functions_dict
+        # )
+        return avg_total_loss_train
+        # return avg_total_loss_train, epoch_scores_dict
 
     def __validation_function(
         self,
@@ -598,9 +598,10 @@ class TrainGradientDescentParent(TrainParent):
 
                 predictions_batch = compute_prediction(output_batch_logit)
                 probabilities_batch = compute_probability(output_batch_logit)
-                batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
-                    probabilities_batch, labels_batch, scores_functions_dict
-                )
+                # batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
+                #     probabilities_batch, labels_batch, scores_functions_dict
+                # )
+                
                 # log
                 # if validation_batch_log_threshold is not None and batch_index % validation_batch_log_threshold == 0:
                 #     report = generate_report_per_batch(
@@ -673,11 +674,12 @@ class TrainGradientDescentParent(TrainParent):
             labels_list = torch.stack(labels_list)
             predictions_epoch = compute_prediction(outputs_logit_list)
             probabilities_epoch = compute_probability(outputs_logit_list)
-            epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
-                probabilities_epoch, labels_list, scores_functions_dict
-            )
+            # epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
+            #     probabilities_epoch, labels_list, scores_functions_dict
+            # )
             if type(scheduler).__name__ == SCHEDULER_PLATEAU_NAME:
                 scheduler.step(avg_total_loss_validation)
             else:
                 scheduler.step()
-            return avg_total_loss_validation, epoch_scores_dict
+            return avg_total_loss_validation
+            # return avg_total_loss_validation, epoch_scores_dict

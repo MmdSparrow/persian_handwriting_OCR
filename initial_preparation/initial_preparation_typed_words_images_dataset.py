@@ -11,5 +11,8 @@ class InitialPreparationTypedWrdsImgesDatasets(InitialPreparationParent):
     def __init__(self, dataset_directory, logger):
         super().__init__(dataset_directory, logger)
 
+    def _get_all_data_names_and_labels(self):
+        pass
+
     def _generate_data_labels(self):
         pass

@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from constants.common_constants import CHOSEN_PREPROCESSES_AND_ITS_HYPERPARAMETERS_DICT, CHOSEN_PREPROCESSES_LIST_IN_ORDER_OF_APPLY
 from utils.data_utils import padding_labels
 from utils.load_and_store_dataset_info import load_dataset_info
-from utils.load_and_store_dataset_labels_utils import get_data_labels, read_csv_file
+from utils.load_and_store_dataset_labels_utils import read_csv_file
 from utils.load_and_store_dataset_preprocess_info import store_dataset_preprocesses_info
 from utils.load_and_store_image_utils import image_loader_selector
 from utils.preprocess_utils.preprocess_function import apply_preprocesses
@@ -50,14 +50,13 @@ class DatasetParent(Dataset):
             chosen_common_preprocesses_hyperparameters_dict,
             dataset_directory,
         )
-        labels_df = read_csv_file(dataset_directory)
-        labels = get_data_labels(data_files_names_list, labels_df)
+        data_files_names_list, labels_list = read_csv_file(dataset_directory)
         # TODO: ADD SOS or EOS IF NEEDED.....
-        labels_lengths = [len(label) for label in labels]
+        labels_lengths = [len(label) for label in labels_list]
         self.augmentation = augmentation
         self.samples = zip(
             [f"{dataset_directory / images_directory / data_file_name}{images_format}" for data_file_name in data_files_names_list],
-            padding_labels(labels, maximum_label_length),
+            padding_labels(labels_list, maximum_label_length),
             labels_lengths,
         )
 

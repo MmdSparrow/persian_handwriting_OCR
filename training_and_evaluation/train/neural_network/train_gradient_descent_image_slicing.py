@@ -32,7 +32,7 @@ from utils.experiment_utils.gradient_descent_utils.experiment_gradient_descent_c
     generate_report_per_batch,
     loss_function_selector,
 )
-from utils.experiment_utils.gradient_descent_utils.image_slicing_utils import get_one_hot_start_token, get_start_token
+from utils.experiment_utils.gradient_descent_utils.image_slicing_utils import get_one_hot_encoded_start_token, get_start_token
 from utils.experiment_utils.gradient_descent_utils.train_gradient_descent_parent_utils import (
     FinalCheckpointDetails,
     generate_final_checkpoint_report,
@@ -498,8 +498,8 @@ class TrainGradientDescentImageSlicing(TrainParent):
             labels_batch_indexed = torch.stack(labels_batch_indexed)
             labels_batch_indexed = labels_batch_indexed.to(self._device)
             hidden = torch.zeros((batch_size, vocab_length), dtype=torch.float32).to(self._device)
-            output = get_one_hot_start_token(batch_size, vocab_length).to(self._device)
-            # output = get_start_token(batch_size).to(self._device)
+            # output = get_one_hot_start_token(batch_size, vocab_length).to(self._device)
+            output = get_start_token(batch_size).to(self._device)
             letters = []
             for j in range(img_splits):
                 output, hidden = model(images_batch[:, :, :, step * (img_splits - j - 1) : step * (img_splits - j)], output, hidden)

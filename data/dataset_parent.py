@@ -20,7 +20,6 @@ class DatasetParent(Dataset):
         dataset_specific_preprocesses,
         chosen_common_preprocesses_list,
         chosen_common_preprocesses_hyperparameters_dict,
-        add_start_and_end_letters,
         augmentation,
         seed,
     ):
@@ -31,8 +30,7 @@ class DatasetParent(Dataset):
         self.__chosen_common_preprocesses_list = chosen_common_preprocesses_list
         self.__chosen_common_preprocesses_hyperparameters_dict = chosen_common_preprocesses_hyperparameters_dict
         data_files_names_list, labels_list = read_csv_file(dataset_directory)
-        if add_start_and_end_letters:
-            labels_list = [SOS_CHARACTER + label + EOS_CHARACTER for label in labels_list]
+        labels_list = [label + EOS_CHARACTER for label in labels_list]
         labels_lengths = [len(label) for label in labels_list]
         self.augmentation = augmentation
         self.samples = [

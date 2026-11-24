@@ -1,6 +1,7 @@
 from _base import BaseModel
 from training_and_evaluation import TestGradientDescentParent, TrainGradientDescentParent
-from training_and_evaluation.train.neural_network.train_gradient_descent_image_slicing import TrainGradientDescentImageSlicing
+
+# from training_and_evaluation.train.neural_network.train_gradient_descent_image_slicing import TrainGradientDescentImageSlicing
 from utils.interfaces_utils import dataset_specific_preprocesses_class_selector, log_seperate_line_decorator, measure_runtime
 
 __all__ = ["NeuralNetworkFunctionsInterface"]
@@ -45,7 +46,7 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         log_init_info=False,
     ):
         self.create_train_neural_network_required_directories()
-        train_parent = TrainGradientDescentImageSlicing(self._dataset_directory, self._outputs_directory, self._logger, self._seed, log_init_info)
+        train_parent = TrainGradientDescentParent(self._dataset_directory, self._outputs_directory, self._logger, self._seed, log_init_info)
         TypedWordsImagesSpecificPreprocesses = dataset_specific_preprocesses_class_selector(self.__dataset_name)
         typed_words_images_specific_preprocesses = TypedWordsImagesSpecificPreprocesses(
             chosen_dataset_specific_preprocesses_name_list,

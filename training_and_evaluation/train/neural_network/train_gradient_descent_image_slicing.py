@@ -494,9 +494,10 @@ class TrainGradientDescentImageSlicing(TrainParent):
         for batch_index, (images_batch, labels_batch, labels_lengths_batch) in enumerate(dataloader_train):
             images_batch = images_batch.to(self._device)
             labels_batch_indexed = [letter_to_index_converter(label) for label in labels_batch]
-            labels_batch_indexed = [F.one_hot(label_indexed, num_classes=vocab_length) for label_indexed in labels_batch_indexed]
+            labels_batch_indexed =  [F.one_hot(torch.tensor(label_indexed, dtype=torch.long), num_classes=vocab_length) for label_indexed in labels_batch_indexed]
+            labels_batch_indexed = torch.stack(labels_batch_indexed)
             labels_batch_indexed = labels_batch_indexed.to(self._device)
-            hidden = torch.zeros((1, vocab_length)).double().to(self._device)
+            hidden = torch.zeros((batch_size, vocab_length), dtype=torch.float32).to(self._device)
             output = get_one_hot_start_token(batch_size, vocab_length).to(self._device)
             # output = get_start_token(batch_size).to(self._device)
             letters = []

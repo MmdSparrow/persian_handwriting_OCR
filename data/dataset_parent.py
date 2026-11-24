@@ -1,6 +1,8 @@
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+from info.vocab_info import EOS_CHARACTER, SOS_CHARACTER
 from utils.data_utils import padding_labels
 from utils.load_and_store_dataset_info import load_dataset_info
 from utils.load_and_store_dataset_labels_utils import read_csv_file
@@ -18,6 +20,7 @@ class DatasetParent(Dataset):
         dataset_specific_preprocesses,
         chosen_common_preprocesses_list,
         chosen_common_preprocesses_hyperparameters_dict,
+        add_start_and_end_letters,
         augmentation,
         seed,
     ):
@@ -28,10 +31,10 @@ class DatasetParent(Dataset):
         self.__chosen_common_preprocesses_list = chosen_common_preprocesses_list
         self.__chosen_common_preprocesses_hyperparameters_dict = chosen_common_preprocesses_hyperparameters_dict
         data_files_names_list, labels_list = read_csv_file(dataset_directory)
-        # TODO: ADD SOS or EOS IF NEEDED.....
+        if add_start_and_end_letters:
+            labels_list = [SOS_CHARACTER + label + EOS_CHARACTER for label in labels_list]
         labels_lengths = [len(label) for label in labels_list]
         self.augmentation = augmentation
-        # [([sample_path], label) for sample_path, label in zip(samples_paths, samples_labels)]
         self.samples = [
             (sample_path, label, label_lenggth)
             for sample_path, label, label_lenggth in zip(
@@ -47,6 +50,7 @@ class DatasetParent(Dataset):
     def __getitem__(self, idx):
         sample_path, sample_label, sample_label_length = self.samples[idx]
         data = self.__load_image_func(sample_path)
+        data = DatasetParent.__prepare_data(data)
         data = self.__dataset_specific_preprocesses.apply_specific_prepreocesses(data)
         data = apply_preprocesses(
             image=data,
@@ -58,3 +62,11 @@ class DatasetParent(Dataset):
         if self.augmentation is not None:
             data = self.augmentation(data)
         return data.float(), sample_label, sample_label_length
+
+    @staticmethod
+    def __prepare_data(data):
+        if not isinstance(data, np.ndarray):
+            data = np.asarray(data)
+        if data.ndim == 2:
+            data = np.expand_dims(data, axis=0)
+        return data

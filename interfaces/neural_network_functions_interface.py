@@ -1,7 +1,5 @@
 from _base import BaseModel
 from training_and_evaluation import TestGradientDescentParent, TrainGradientDescentParent
-
-# from training_and_evaluation.train.neural_network.train_gradient_descent_image_slicing import TrainGradientDescentImageSlicing
 from utils.interfaces_utils import dataset_specific_preprocesses_class_selector, log_seperate_line_decorator, measure_runtime
 
 __all__ = ["NeuralNetworkFunctionsInterface"]
@@ -26,7 +24,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         train_data_files_names_list,
         validation_data_files_names_list,
         batch_size,
-        img_splits,
         optimizer_name,
         optimizer_hyperparameters_dict,
         scheduler_name,
@@ -62,7 +59,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
             train_data_files_names_list=train_data_files_names_list,
             validation_data_files_names_list=validation_data_files_names_list,
             batch_size=batch_size,
-            img_splits=img_splits,
             optimizer_name=optimizer_name,
             optimizer_hyperparameters_dict=optimizer_hyperparameters_dict,
             scheduler_name=scheduler_name,
@@ -121,7 +117,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
         model,
         test_data_files_names_list,
         batch_size,
-        ensemble_inference_chunk_size,
         scores_name_list,
         checkpoint_directory,
         test_batch_log_threshold,
@@ -134,7 +129,6 @@ class NeuralNetworkFunctionsInterface(BaseModel):
             model=model,
             test_data_files_names_list=test_data_files_names_list,
             batch_size=batch_size,
-            ensemble_inference_chunk_size=ensemble_inference_chunk_size,
             scores_name_list=scores_name_list,
             checkpoint_directory=checkpoint_directory,
             directory_to_save_results=self._results_directory,

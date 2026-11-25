@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 
 from constants.common_constants import CROSS_ENTROPY_LOSS, CTC_LOSS, FOCAL_LOSS
@@ -42,13 +41,7 @@ def generate_report_per_batch(batch_scores_dict, batch_loss, batch_index, batche
     return base_str
 
 
-# BUG: RNN MODELS GET TWO INPUT (INPUT, HIDDEN)
-def count_parameters(model, dataloader_train):
-    device = next(model.parameters()).device
-    with torch.no_grad():
-        sample_batch = next(iter(dataloader_train))
-        dummy_input = sample_batch[0][:1].to(device)
-        _ = model(dummy_input)
-    total = sum(p.numel() for p in model.parameters())
-    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    return total, trainable
+def count_parameters(model):
+    total_params = sum(parameter.numel() for parameter in model.parameters())
+    trainable_params = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
+    return total_params, trainable_params

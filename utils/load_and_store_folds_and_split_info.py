@@ -79,5 +79,5 @@ def get_train_and_validation_data_files_paths_for_test_and_train_and_validation_
     split_info_file_path,
 ):
     with open(split_info_file_path, "r") as file_to_read:
-        train_and_validation_files_paths = json.load(file_to_read)
-    return train_and_validation_files_paths[__SPLIT_INFO_TRAIN_KEY], train_and_validation_files_paths[__SPLIT_INFO_VALIDATION_KEY]
+        train_and_validation_and_test_files_paths = json.load(file_to_read)
+    return train_and_validation_and_test_files_paths[__SPLIT_INFO_TRAIN_KEY], train_and_validation_and_test_files_paths[__SPLIT_INFO_VALIDATION_KEY], train_and_validation_and_test_files_paths[__SPLIT_INFO_TEST_KEY]

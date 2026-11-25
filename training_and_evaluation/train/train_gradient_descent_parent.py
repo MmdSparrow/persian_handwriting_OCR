@@ -4,12 +4,8 @@ from torch.utils.data import DataLoader
 
 # from visualizer import VisualizerParent
 from constants.common_constants import (
-    ACCURACY_LIMIT,
     CHOSEN_PREPROCESSES_AND_ITS_HYPERPARAMETERS_DICT,
     CHOSEN_PREPROCESSES_LIST_IN_ORDER_OF_APPLY,
-    EARLY_STOP_ACCURACY_LIMIT,
-    EARLY_STOP_LOSS_NO_IMPROVEMENT_EPOCH_LIMIT,
-    LOSS_NO_IMPROVEMENT_EPOCH_LIMIT,
     SCHEDULER_PLATEAU_NAME,
     SPLIT_TRAIN_NAME,
     SPLIT_VALIDATION_NAME,
@@ -189,10 +185,9 @@ class TrainGradientDescentParent(TrainParent):
             self._logger.info("MODEL ARCHITECTURE")
             self._logger.info("-" * 80)
             self._logger.info("\n%s", model)
-            # BUG: FIX THIS
-            # total_params, trainable_params = count_parameters(model, dataloader_train)
-            # self._logger.info(f"Total parameters:     {total_params:,}")
-            # self._logger.info(f"Trainable parameters: {trainable_params:,}")
+            total_params, trainable_params = count_parameters(model)
+            self._logger.info(f"Total parameters:     {total_params:,}")
+            self._logger.info(f"Trainable parameters: {trainable_params:,}")
             self._logger.info("-" * 80)
             if hasattr(model, "initialize_weights"):
                 self._logger.info("Model use implemented initialize weight function")
@@ -412,21 +407,6 @@ class TrainGradientDescentParent(TrainParent):
                 )
             else:
                 no_improvement_counter += 1
-            # early stop methods
-            # if (
-            #     EARLY_STOP_ACCURACY_LIMIT in early_stop_methods
-            #     and epoch_scores_dict_validation[ACCURACY_SCORE_NAME] > early_stop_methods_hyperparameters[ACCURACY_LIMIT]
-            # ):
-            #     self._logger.info(f"Early stopping triggered: accuracy threshold {early_stop_methods_hyperparameters[ACCURACY_LIMIT]} reached")
-            #     break
-            if (
-                EARLY_STOP_LOSS_NO_IMPROVEMENT_EPOCH_LIMIT in early_stop_methods
-                and no_improvement_counter > early_stop_methods_hyperparameters[LOSS_NO_IMPROVEMENT_EPOCH_LIMIT]
-            ):
-                self._logger.info(
-                    f"Early stopping triggered: no loss improvement for {early_stop_methods_hyperparameters[LOSS_NO_IMPROVEMENT_EPOCH_LIMIT]} epochs"
-                )
-                break
 
         save_final_results(loss_list_train_epoch, loss_list_validation_epoch, scores_list_train_epoch, scores_list_validation_epoch, directory_to_save_results)
         report = generate_final_checkpoint_report(final_checkpoint_details)
@@ -496,11 +476,9 @@ class TrainGradientDescentParent(TrainParent):
                 model.weight_clip()
             # loss
             loss_batch_list.append(loss.item())
-            # score
-            labels_batch = labels_batch.detach().cpu()
 
-            # compute scores
-            predictions_encoded = outputs.argmax(dim=1).detach().cpu()
+            # score
+            predictions_encoded = outputs.argmax(dim=2).detach().cpu()
             predictions_encoded = clean_encoded_labels(predictions_encoded)
             ground_truth = clean_encoded_labels(labels_batch_encoded.detach().cpu())
             batch_scores_dict = compute_scores(
@@ -526,12 +504,14 @@ class TrainGradientDescentParent(TrainParent):
                 and batch_index % train_epoch_and_batch_sample_threshold[1] == 0
             ):
                 random_index = torch.randint(0, batch_size, (1,)).item()
-                sample_ground_truth = ground_truth[random_index].detach()
+                sample_ground_truth = ground_truth[random_index]
                 sample_predicted_label = predictions_encoded[random_index]
 
+                print("-" * 10)
                 print(f"Train sample index: {self._train_sample_index}")
                 print(f"Ground Truth: {index_to_letter_converter(sample_ground_truth)}")
                 print(f"Prediction :{index_to_letter_converter(sample_predicted_label)}")
+                print("-" * 10)
                 self._train_sample_index += 1
 
         avg_total_loss_train = sum(loss_batch_list) / batches_num
@@ -583,7 +563,7 @@ class TrainGradientDescentParent(TrainParent):
                 outputs.append(logits)
 
                 if t + 1 < sequence_length:
-                    input_token = decoder_inputs[:, t + 1]
+                    input_token = logits.argmax(dim=1)
 
             outputs = torch.stack(outputs, dim=1)
             loss = criterion(
@@ -624,9 +604,11 @@ class TrainGradientDescentParent(TrainParent):
                 sample_ground_truth = ground_truth[random_index].detach()
                 sample_predicted_label = predictions_encoded[random_index]
 
+                print("-" * 10)
                 print(f"Validation sample index: {self._validation_sample_index}")
                 print(f"Ground Truth: {index_to_letter_converter(sample_ground_truth)}")
                 print(f"Prediction :{index_to_letter_converter(sample_predicted_label)}")
+                print("-" * 10)
                 self._validation_sample_index += 1
 
         avg_total_loss_validation = sum(loss_batch_list) / batches_num

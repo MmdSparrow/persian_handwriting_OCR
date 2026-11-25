@@ -26,16 +26,10 @@ def clean_encoded_labels(encoded_prediction_batch):
     pad_index = VOCAB_LETTERS_INDEXES_DICT[PADDING_CHARACTER]
     eos_index = VOCAB_LETTERS_INDEXES_DICT[EOS_CHARACTER]
     cleaned_batch = []
-    for prediction in encoded_prediction_batch:
-        cleaned_prediction = []
-        for token in prediction:
-            token = int(token)
-            if token == eos_index:
-                break
-            if token in (sos_index, pad_index):
-                continue
-            cleaned_prediction.append(token)
-        cleaned_batch.append(cleaned_prediction)
+    for prediction in encoded_prediction_batch.tolist():
+        if eos_index in prediction:
+            prediction = prediction[: prediction.index(eos_index)]
+        cleaned_batch.append([token for token in prediction if token not in (sos_index, pad_index)])
     return cleaned_batch
 
 

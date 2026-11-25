@@ -32,8 +32,6 @@ class CNNEncoder(nn.Module):
 
     def forward(self, images):
         features = self.cnn(images)  # (B, C, H, W) -> (B, 256, H/16, W/4)
-
-        # Average over the height dimension.
         # (B, C, H', W') -> (B, W', C)
         features = features.mean(dim=2).transpose(1, 2)
 
@@ -57,13 +55,8 @@ class BahdanauAttention(nn.Module):
         self.energy = nn.Linear(attention_size, 1)
 
     def forward(self, features, hidden, padding_mask=None):
-        # features: (B, W', feature_size)
-        # hidden:   (B, hidden_size)
-
         feature_scores = self.feature_projection(features)
-
         hidden_scores = self.hidden_projection(hidden).unsqueeze(1)
-
         scores = self.energy(torch.tanh(feature_scores + hidden_scores)).squeeze(-1)
 
         # Ignore padded image positions.
@@ -71,8 +64,6 @@ class BahdanauAttention(nn.Module):
             scores = scores.masked_fill(padding_mask, float("-inf"))
 
         attention_weights = F.softmax(scores, dim=1)
-
-        # Weighted sum of visual features.
         context = torch.bmm(
             attention_weights.unsqueeze(1),
             features,

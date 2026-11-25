@@ -3,13 +3,14 @@ from torch.utils.data import DataLoader
 
 from constants.common_constants import SPLIT_TEST_NAME
 from data import DatasetParent
+from utils.alphabet_letters_utils import clean_encoded_labels, index_to_letter_converter, letter_to_index_converter
 from utils.experiment_utils.experiment_common_utils import (
+    compute_scores,
+    compute_scores_dict_list_avg,
     score_functions_selector,
 )
 from utils.experiment_utils.gradient_descent_utils.checkpoint_utils import load_final_checkpoint
 from utils.experiment_utils.gradient_descent_utils.experiment_gradient_descent_common_utils import (
-    compute_prediction,
-    compute_probability,
     count_parameters,
     generate_report_per_batch,
     loss_function_selector,
@@ -59,59 +60,6 @@ class TestGradientDescentParent(TestParent):
         test_batch_sample_threshold,
         log_init_info,
     ):
-        self._logger.info("Test normal version")
-        self.__test_process_interface_to_support_different_type_of_test(
-            self.__test_function,
-            model,
-            batch_size,
-            scores_name_list,
-            checkpoint_directory,
-            directory_to_save_results,
-            directory_to_save_samples,
-            test_batch_log_threshold,
-            test_batch_sample_threshold,
-            log_init_info=log_init_info,
-        )
-
-    def ensemble_test(
-        self,
-        model,
-        batch_size,
-        scores_name_list,
-        checkpoint_directory,
-        directory_to_save_results,
-        directory_to_save_samples,
-        test_batch_log_threshold,
-        test_batch_sample_threshold,
-        log_init_info,
-    ):
-        self._logger.info("Test ensemble version")
-        self.__test_process_interface_to_support_different_type_of_test(
-            self.__ensemble_test_function,
-            model,
-            batch_size,
-            scores_name_list,
-            checkpoint_directory,
-            directory_to_save_results,
-            directory_to_save_samples,
-            test_batch_log_threshold,
-            test_batch_sample_threshold,
-            log_init_info=log_init_info,
-        )
-
-    def __test_process_interface_to_support_different_type_of_test(
-        self,
-        test_function,
-        model,
-        batch_size,
-        scores_name_list,
-        checkpoint_directory,
-        directory_to_save_results,
-        directory_to_save_samples,
-        test_batch_log_threshold,
-        test_batch_sample_threshold,
-        log_init_info,
-    ):
         dataloader_test = self.__prepare_data(batch_size, None)
         model_state_dict, loss_function_name = load_final_checkpoint(checkpoint_directory)
         model.load_state_dict(model_state_dict)
@@ -123,12 +71,12 @@ class TestGradientDescentParent(TestParent):
             self._logger.info("MODEL ARCHITECTURE")
             self._logger.info("-" * 80)
             self._logger.info("\n%s", model)
-            total_params, trainable_params = count_parameters(model, dataloader_test)
+            total_params, trainable_params = count_parameters(model)
             self._logger.info(f"Total parameters:     {total_params:,}")
             self._logger.info(f"Trainable parameters: {trainable_params:,}")
             self._logger.info("-" * 80)
 
-        test_function(
+        self.__test_function(
             model,
             dataloader_test,
             criterion,
@@ -150,157 +98,86 @@ class TestGradientDescentParent(TestParent):
         test_batch_log_threshold,
         test_batch_sample_threshold,
     ):
-        test_batches_num = len(dataloader_test)
+        batches_num = len(dataloader_test)
+        model.eval()
+
+        batch_size = dataloader_test.batch_size
+
         loss_batch_list = []
-        labels_list = []
-        outputs_logit_list = []
-        with torch.no_grad():
-            model.eval()
-            for batch_index, (eeg_batch, labels_batch) in enumerate(dataloader_test):
-                eeg_batch, labels_batch = eeg_batch.to(self._device), labels_batch.to(self._device)
-                output_batch_logit = model(eeg_batch)
-                loss = criterion(output_batch_logit, labels_batch)
-                # loss
-                loss_batch_list.append(loss.item())
-                # score
-                output_batch_logit = output_batch_logit.cpu()
-                labels_batch = labels_batch.cpu()
-                labels_list.extend(labels_batch)
-                outputs_logit_list.extend(output_batch_logit)
+        batch_scores_dict_list = []
+        for batch_index, (images_batch, labels_batch, labels_lengths_batch) in enumerate(dataloader_test):
+            images_batch = images_batch.to(self._device)
+            labels_batch_encoded = [letter_to_index_converter(label) for label in labels_batch]
+            labels_batch_encoded = torch.stack(labels_batch_encoded)
+            labels_batch_encoded = labels_batch_encoded.to(self._device)
 
-                # predictions_batch = compute_prediction(output_batch_logit)
-                # probabilities_batch = compute_probability(output_batch_logit)
-                # batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
-                #     probabilities_batch, labels_batch, scores_functions_dict
-                # )
-                # # log
-                # if test_batch_log_threshold is not None and batch_index % test_batch_log_threshold == 0:
-                #     report = generate_report_per_batch(
-                #         batch_scores_dict=batch_scores_dict,
-                #         batch_loss=loss.item(),
-                #         batch_index=batch_index,
-                #         batches_num=test_batches_num,
-                #         split=SPLIT_TEST_NAME,
-                #     )
-                #     self._logger.info(report)
-                
-                # if batch_index % test_batch_sample_threshold == 0:
-                #     sample_predicted_label = predictions_batch[0]
-                #     channel_importance = compute_integrated_gradients(
-                #         model=model,
-                #         x=eeg_batch[0],
-                #         target_class=1,
-                #     )
-                #     channel_importance = channel_importance.detach().cpu()
-                #     if channel_importance.ndim == 2:
-                #         channel_importance = concatenate_hemispharer_based_separated_channels(
-                #             channel_importance[0],
-                #             channel_importance[1],
-                #         )
-                #     VisualizerParent.visualize_channels_importance_on_2d_head(
-                #         channel_scores=channel_importance,
-                #         split=SPLIT_TEST_NAME,
-                #         file_name=self._test_sample_index,
-                #         montage_name=dataloader_test.dataset.get_montage_name(),
-                #         ch_names=dataloader_test.dataset.get_selected_channels(),
-                #         true_label=labels_batch[0],
-                #         predicted_label=sample_predicted_label,
-                #         directory_to_save_figure=directory_to_save_samples,
-                #     )
-                #     self.__sample_index += 1
-        avg_total_loss = sum(loss_batch_list) / test_batches_num
-        outputs_logit_list = torch.stack(outputs_logit_list)
-        labels_list = torch.stack(labels_list)
-        predictions_epoch = compute_prediction(outputs_logit_list)
-        probabilities_epoch = compute_probability(outputs_logit_list)
-        # epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
-        #     probabilities_epoch, labels_list, scores_functions_dict
-        # )
-        # save_final_results(avg_total_loss, epoch_scores_dict, directory_to_save_results)
-        # report = generate_final_report(epoch_scores_dict, avg_total_loss)
-        # self._logger.info(report)
+            decoder_inputs = labels_batch_encoded[:, :-1]
+            targets = labels_batch_encoded[:, 1:]
 
-    def __ensemble_test_function(
-        self,
-        model,
-        dataloader_test,
-        criterion,
-        scores_functions_dict,
-        directory_to_save_results,
-        directory_to_save_samples,
-        test_batch_log_threshold,
-        test_batch_sample_threshold,
-    ):
-        test_batches_num = len(dataloader_test)
-        loss_batch_list = []
-        labels_list = []
-        predictions_epoch = []
-        outputs_logit_list = []
-        with torch.no_grad():
-            model.eval()
-            for batch_index, (eeg_batch_ensemble, labels_batch) in enumerate(dataloader_test):
-                eeg_batch_ensemble = eeg_batch_ensemble.to(self._device)
-                labels_batch = labels_batch.to(self._device)
-                chunk_size = eeg_batch_ensemble.shape[1]
-                output_logit_chunks_batch_list = []
-                for chunk_index in range(chunk_size):
-                    chunk_batch = eeg_batch_ensemble[:, chunk_index, ...]
-                    output_chunk_batch_logit = model(chunk_batch)
-                    output_logit_chunks_batch_list.append(output_chunk_batch_logit)
-                # loss = compute_chunks_batch_avg_loss(output_logit_chunks_batch_list, labels_batch, criterion)
-                # loss_batch_list.append(loss)
-                # # score
-                # labels_batch = labels_batch.cpu()
-                # labels_list.extend(labels_batch)
-                # predictions_batch = compute_prediction_by_voting_on_chunks_batch(output_logit_chunks_batch_list)
-                # predictions_epoch.extend(predictions_batch)
-                # output_batch_logit = compute_avg_column_wise(output_logit_chunks_batch_list)
-                # outputs_logit_list.extend(output_batch_logit)
+            features, hidden, padding_mask = model.encode(images_batch)
 
-                # probabilities_batch = compute_probability(output_batch_logit)
-                # batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
-                #     probabilities_batch, labels_batch, scores_functions_dict
-                # )
-                # if test_batch_log_threshold is not None and batch_index % test_batch_log_threshold == 0:
-                #     report = generate_report_per_batch(
-                #         batch_scores_dict=batch_scores_dict,
-                #         batch_loss=loss,
-                #         batch_index=batch_index,
-                #         batches_num=test_batches_num,
-                #         split=SPLIT_TEST_NAME,
-                #     )
-                #     self._logger.info(report)
-                # if batch_index % test_batch_sample_threshold == 0:
-                #     sample_predicted_label = predictions_batch[0]
-                #     channel_importance = compute_integrated_gradients(
-                #         model=model,
-                #         x=eeg_batch_ensemble[0][0],
-                #         target_class=1,
-                #     )
-                #     channel_importance = channel_importance.detach().cpu()
-                #     if channel_importance.ndim == 2:
-                #         channel_importance = concatenate_hemispharer_based_separated_channels(
-                #             channel_importance[0],
-                #             channel_importance[1],
-                #         )
-                #     VisualizerParent.visualize_channels_importance_on_2d_head(
-                #         channel_scores=channel_importance,
-                #         split=SPLIT_TEST_NAME,
-                #         file_name=self._test_sample_index,
-                #         montage_name=dataloader_test.dataset.get_montage_name(),
-                #         ch_names=dataloader_test.dataset.get_selected_channels(),
-                #         true_label=eeg_batch_ensemble[0][0],
-                #         predicted_label=sample_predicted_label,
-                #         directory_to_save_figure=directory_to_save_samples,
-                #     )
-                #     self._test_sample_index += 1
-        avg_total_loss = sum(loss_batch_list) / test_batches_num
-        outputs_logit_list = torch.stack(outputs_logit_list)
-        labels_list = torch.stack(labels_list)
-        probabilities_epoch = compute_probability(outputs_logit_list)
-        # epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
-        #     probabilities_epoch, labels_list, scores_functions_dict
-        # )
-        # save_final_results(avg_total_loss, epoch_scores_dict, directory_to_save_results)
-        # report = generate_final_report(epoch_scores_dict, avg_total_loss)
-        # self._logger.info(report)
+            # decode
+            outputs = []
+            sequence_length = decoder_inputs.size(1)
+            input_token = decoder_inputs[:, 0]
+
+            for t in range(sequence_length):
+                logits, hidden, _ = model.decode_step(
+                    features=features,
+                    input_token=input_token,
+                    hidden=hidden,
+                    padding_mask=padding_mask,
+                )
+                outputs.append(logits)
+
+                if t + 1 < sequence_length:
+                    input_token = logits.argmax(dim=1)
+
+            outputs = torch.stack(outputs, dim=1)
+            loss = criterion(
+                outputs.reshape(-1, outputs.size(-1)),
+                targets.reshape(-1),
+            )
+            loss_batch_list.append(loss.item())
+            # score
+            labels_batch = labels_batch.detach().cpu()
+
+            # compute scores
+            predictions_encoded = outputs.argmax(dim=1).detach().cpu()
+            predictions_encoded = clean_encoded_labels(predictions_encoded)
+            ground_truth = clean_encoded_labels(labels_batch_encoded.detach().cpu())
+            batch_scores_dict = compute_scores(
+                predictions=predictions_encoded,
+                ground_truth=ground_truth,
+                scores_functions_dict=scores_functions_dict,
+            )
+            batch_scores_dict_list.append(batch_scores_dict)
+
+            # log
+            if test_batch_log_threshold is not None and batch_index % test_batch_log_threshold == 0:
+                report = generate_report_per_batch(
+                    batch_scores_dict=batch_scores_dict,
+                    batch_loss=loss.item(),
+                    batch_index=batch_index,
+                    batches_num=batches_num,
+                    split=SPLIT_TEST_NAME,
+                )
+                self._logger.info(report)
+            if test_batch_sample_threshold is not None and batch_index % test_batch_sample_threshold == 0:
+                random_index = torch.randint(0, batch_size, (1,)).item()
+                sample_ground_truth = ground_truth[random_index].detach()
+                sample_predicted_label = predictions_encoded[random_index]
+
+                print("-" * 10)
+                print(f"Test sample index: {self._test_sample_index}")
+                print(f"Ground Truth: {index_to_letter_converter(sample_ground_truth)}")
+                print(f"Prediction :{index_to_letter_converter(sample_predicted_label)}")
+                print("-" * 10)
+                self._test_sample_index += 1
+
+        avg_total_loss_test = sum(loss_batch_list) / batches_num
+        epoch_scores_dict = compute_scores_dict_list_avg(batch_scores_dict_list)
+        save_final_results(avg_total_loss_test, epoch_scores_dict, directory_to_save_results)
+        report = generate_final_report(epoch_scores_dict, avg_total_loss_test)
+        self._logger.info(report)
+        return avg_total_loss_test, epoch_scores_dict

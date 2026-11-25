@@ -2,12 +2,12 @@ import torch
 from torch import nn
 
 from constants.common_constants import CROSS_ENTROPY_LOSS, CTC_LOSS, FOCAL_LOSS
-from info.vocab_info import BLANK_CHARACTER, PADDING_CHARACTER, VOCAB_LETTERS_INDEXES_DICT
+from info.vocab_info import PADDING_CHARACTER, VOCAB_LETTERS_INDEXES_DICT
+
+# from info.vocab_info import BLANK_CHARACTER
 from utils.experiment_utils.loss_functions import FocalLoss
 
 __all__ = [
-    "compute_prediction",
-    "compute_probability",
     "count_parameters",
     "generate_report_per_batch",
     "loss_function_selector",
@@ -25,7 +25,9 @@ def loss_function_selector(loss_function_name):
             ignore_index=VOCAB_LETTERS_INDEXES_DICT[PADDING_CHARACTER],
             label_smoothing=0.1,
         ),
-        CTC_LOSS: nn.CTCLoss(blank=VOCAB_LETTERS_INDEXES_DICT[BLANK_CHARACTER]),
+        # CTC_LOSS: nn.CTCLoss(
+        #     blank=VOCAB_LETTERS_INDEXES_DICT[BLANK_CHARACTER],
+        # ),
     }
     try:
         return LOSSES_NAME_FUNCTIONS_MAP[loss_function_name]
@@ -38,14 +40,6 @@ def generate_report_per_batch(batch_scores_dict, batch_loss, batch_index, batche
     for key in batch_scores_dict:
         base_str += f", {key}: {batch_scores_dict[key]:.7f}"
     return base_str
-
-
-def compute_prediction(outputs_logit):
-    return outputs_logit.argmax(dim=1)
-
-
-def compute_probability(outputs_logit):
-    return outputs_logit.softmax(dim=1)[:, 1]
 
 
 # BUG: RNN MODELS GET TWO INPUT (INPUT, HIDDEN)

@@ -30,14 +30,14 @@ class DatasetParent(Dataset):
         self.__chosen_common_preprocesses_list = chosen_common_preprocesses_list
         self.__chosen_common_preprocesses_hyperparameters_dict = chosen_common_preprocesses_hyperparameters_dict
         data_files_names_list, labels_list = read_csv_file(dataset_directory)
-        labels_list = [label + EOS_CHARACTER for label in labels_list]
-        labels_lengths = [len(label) for label in labels_list]
+        labels_list = [SOS_CHARACTER + label + EOS_CHARACTER for label in labels_list]
+        labels_lengths = [len(label) - 1 for label in labels_list]
         self.augmentation = augmentation
         self.samples = [
             (sample_path, label, label_lenggth)
             for sample_path, label, label_lenggth in zip(
                 [f"{dataset_directory / images_directory / data_file_name}{images_format}" for data_file_name in data_files_names_list],
-                padding_labels(labels_list, maximum_label_length),
+                padding_labels(labels_list, maximum_label_length + 2),
                 labels_lengths,
             )
         ]

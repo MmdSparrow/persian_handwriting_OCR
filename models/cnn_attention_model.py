@@ -162,7 +162,7 @@ class CNNAttentionOCR(nn.Module):
     def __init__(
         self,
         vocab_size,
-        input_channels=1,
+        input_channels,
         feature_size=256,
         embedding_dim=64,
         hidden_size=256,
@@ -247,4 +247,10 @@ class CNNAttentionOCR(nn.Module):
             input_token,
             hidden,
             padding_mask,
+        )
+
+    def gradient_clip(self):
+        torch.nn.utils.clip_grad_norm_(
+            self.parameters(),
+            max_norm=5.0,
         )

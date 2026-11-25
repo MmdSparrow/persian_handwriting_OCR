@@ -7,4 +7,3 @@ __all__ = [
 
 def padding_labels(labels_list, maximum_length):
     return [s.ljust(maximum_length, PADDING_CHARACTER) for s in labels_list]
-    # return [s.rjust(maximum_length, PADDING_CHARACTER) for s in labels_list]

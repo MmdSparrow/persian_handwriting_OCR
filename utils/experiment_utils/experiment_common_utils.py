@@ -1,3 +1,5 @@
+import numpy as np
+
 from constants.common_constants import (
     CHARACTER_ACCURACY,
     CHARACTER_ERROR_RATE,
@@ -33,8 +35,18 @@ def score_functions_selector(scores_name_list):
     return scores_functions_dict
 
 
-def compute_scores(predictions, ground_truth, scores_functions_dict):
+def compute_scores(
+    predictions,
+    ground_truth,
+    scores_functions_dict,
+):
     scores = {}
     for score_name, score_function in scores_functions_dict.items():
         scores[score_name] = score_function(ground_truth, predictions)
     return scores
+
+def compute_scores_dict_list_avg(scores_dict_list):
+    return {
+        metric: np.mean([batch[metric] for batch in scores_dict_list])
+        for metric in scores_dict_list[0]
+    }

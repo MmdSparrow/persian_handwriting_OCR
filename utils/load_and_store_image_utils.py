@@ -1,6 +1,8 @@
 import cv2
 
-__all__ = ["image_loader_selector"]
+__all__ = [
+    "image_loader_selector",
+]
 
 
 def image_loader_selector(image_format):
@@ -10,11 +12,3 @@ def image_loader_selector(image_format):
 
 def __load_tif_image(image_path):
     return cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-
-    # # Display image
-    # plt.imshow(img, cmap='gray')
-    # plt.axis('off')
-    # plt.show()
-
-    # print(img.shape)
-    # print(img.dtype)

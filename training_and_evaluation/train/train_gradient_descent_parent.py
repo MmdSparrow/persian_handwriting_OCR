@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 # from visualizer import VisualizerParent
@@ -16,23 +15,18 @@ from constants.common_constants import (
     SPLIT_VALIDATION_NAME,
 )
 from data import DatasetParent
-from info.vocab_info import VOCAB_LETTERS_INDEXES_DICT
-from utils.character_index_converter import letter_to_index_converter
+from utils.alphabet_letters_utils import clean_encoded_labels, index_to_letter_converter, letter_to_index_converter
 from utils.experiment_utils.experiment_common_utils import (
-    # compute_prediction_based_scores,
-    # compute_probability_based_scores,
+    compute_scores,
+    compute_scores_dict_list_avg,
     score_functions_selector,
-    # store_channel_importance_counts,
 )
 from utils.experiment_utils.gradient_descent_utils.checkpoint_utils import load_checkpoint, save_checkpoint
 from utils.experiment_utils.gradient_descent_utils.experiment_gradient_descent_common_utils import (
-    compute_prediction,
-    compute_probability,
     count_parameters,
     generate_report_per_batch,
     loss_function_selector,
 )
-from utils.experiment_utils.gradient_descent_utils.image_slicing_utils import get_one_hot_encoded_start_token, get_start_token
 from utils.experiment_utils.gradient_descent_utils.train_gradient_descent_parent_utils import (
     FinalCheckpointDetails,
     generate_final_checkpoint_report,
@@ -125,7 +119,6 @@ class TrainGradientDescentParent(TrainParent):
         train_data_files_names_list,
         validation_data_files_names_list,
         batch_size,
-        img_splits,
         optimizer_name,
         optimizer_hyperparameters_dict,
         scheduler_name,
@@ -214,7 +207,6 @@ class TrainGradientDescentParent(TrainParent):
             dataloader_train=dataloader_train,
             dataloader_validation=dataloader_validation,
             batch_size=batch_size,
-            img_splits=img_splits,
             epoch_start=0,
             epochs_num=epochs_num,
             loss_function_name=loss_function_name,
@@ -252,7 +244,6 @@ class TrainGradientDescentParent(TrainParent):
         new_epochs_num=None,
     ):
         (
-            img_splits,
             batch_size,
             checkpoint_epoch,
             epochs_num,
@@ -288,7 +279,6 @@ class TrainGradientDescentParent(TrainParent):
         self.__train_or_continue_train_and_validation_process(
             model=model,
             batch_size=batch_size,
-            img_splits=img_splits,
             epoch_start=checkpoint_epoch + 1,
             epochs_num=epochs_num,
             loss_function_name=loss_function_name,
@@ -316,7 +306,6 @@ class TrainGradientDescentParent(TrainParent):
         dataloader_train,
         dataloader_validation,
         batch_size,
-        img_splits,
         epoch_start,
         epochs_num,
         loss_function_name,
@@ -346,7 +335,6 @@ class TrainGradientDescentParent(TrainParent):
             avg_total_loss_train, epoch_scores_dict_train = self.__train_function(
                 model=model,
                 dataloader_train=dataloader_train,
-                img_splits=img_splits,
                 criterion=criterion,
                 optimizer=optimizer,
                 epoch_index=epoch_index,
@@ -440,28 +428,6 @@ class TrainGradientDescentParent(TrainParent):
                 )
                 break
 
-        # store_channel_importance_counts(
-        #     first_20_percent_channels_count_true_prediction=self._first_20_percent_channels_count_train_true_predictions,
-        #     second_20_percent_channels_count_true_prediction=self._second_20_percent_channels_count_train_true_predictions,
-        #     first_20_percent_channels_count_false_prediction=self._first_20_percent_channels_count_train_false_predictions,
-        #     second_20_percent_channels_count_false_prediction=self._second_20_percent_channels_count_train_false_predictions,
-        #     total_samples_true_prediction=self._total_train_true_predictions_samples,
-        #     total_samples_flase_prediction=self._total_train_false_predictions_samples,
-        #     split_name=SPLIT_TRAIN_NAME,
-        #     directory_to_save_files=directory_to_save_results,
-        # )
-
-        # store_channel_importance_counts(
-        #     first_20_percent_channels_count_true_prediction=self._first_20_percent_channels_count_validation_true_predictions,
-        #     second_20_percent_channels_count_true_prediction=self._second_20_percent_channels_count_validation_true_predictions,
-        #     first_20_percent_channels_count_false_prediction=self._first_20_percent_channels_count_validation_false_predictions,
-        #     second_20_percent_channels_count_false_prediction=self._second_20_percent_channels_count_validation_false_predictions,
-        #     total_samples_true_prediction=self._total_validation_true_predictions_samples,
-        #     total_samples_flase_prediction=self._total_validation_false_predictions_samples,
-        #     split_name=SPLIT_VALIDATION_NAME,
-        #     directory_to_save_files=directory_to_save_results,
-        # )
-
         save_final_results(loss_list_train_epoch, loss_list_validation_epoch, scores_list_train_epoch, scores_list_validation_epoch, directory_to_save_results)
         report = generate_final_checkpoint_report(final_checkpoint_details)
         self._logger.info(report)
@@ -478,45 +444,46 @@ class TrainGradientDescentParent(TrainParent):
         train_batch_log_threshold,
         train_epoch_and_batch_sample_threshold,
     ):
-        train_batches_num = len(dataloader_train)
+        batches_num = len(dataloader_train)
         model.train()
 
-        sample = next(iter(dataloader_train))
-        label_max_length = sample[1].shape[1]
-        
-
-        vocab_length = len(VOCAB_LETTERS_INDEXES_DICT)
         batch_size = dataloader_train.batch_size
 
         loss_batch_list = []
-        labels_list = []
-        outputs_logit_list = []
+        batch_scores_dict_list = []
         for batch_index, (images_batch, labels_batch, labels_lengths_batch) in enumerate(dataloader_train):
             images_batch = images_batch.to(self._device)
-            labels_batch_indexed = [letter_to_index_converter(label) for label in labels_batch]
-            labels_batch_indexed =  [F.one_hot(torch.tensor(label_indexed, dtype=torch.long), num_classes=vocab_length) for label_indexed in labels_batch_indexed]
-            labels_batch_indexed = torch.stack(labels_batch_indexed)
-            labels_batch_indexed = labels_batch_indexed.to(self._device)
-            hidden = torch.zeros((batch_size, vocab_length), dtype=torch.float32).to(self._device)
-            # output = get_one_hot_encoded_start_token(batch_size, vocab_length).to(self._device)
-            output = get_start_token(batch_size).to(self._device)
-            letters = []
-            for iteration in range(label_max_length):
-                output, hidden = model(images_batch, output, hidden)
-                letters.append(output)
+            labels_batch_encoded = [letter_to_index_converter(label) for label in labels_batch]
+            labels_batch_encoded = torch.stack(labels_batch_encoded)
+            labels_batch_encoded = labels_batch_encoded.to(self._device)
 
-            predicted_word = torch.cat(letters, dim=1)
-            # predicted_word = torch.cat(letters, dim=1).view(img_splits, 1, vocab_length)
-            # predicted_word = torch.cat(letters, dim=1).view(img_splits, batch_size, vocab_length)
+            decoder_inputs = labels_batch_encoded[:, :-1]
+            targets = labels_batch_encoded[:, 1:]
 
-            # if batch_index % 1 == 0:
-            #     print(tensor_to_word(predicted_word))
-            #     print(indice_to_word(word.view((1, -1))[0]))
-            #     print(target_seq_len)
-            #     print("=" * 20)
+            features, hidden, padding_mask = model.encode(images_batch)
 
-            # compairing the output and word based on CTCLoss
-            loss = criterion(predicted_word, labels_batch_indexed, [img_splits] * batch_size, labels_lengths_batch)
+            # decode
+            outputs = []
+            sequence_length = decoder_inputs.size(1)
+            input_token = decoder_inputs[:, 0]
+
+            for t in range(sequence_length):
+                logits, hidden, _ = model.decode_step(
+                    features=features,
+                    input_token=input_token,
+                    hidden=hidden,
+                    padding_mask=padding_mask,
+                )
+                outputs.append(logits)
+
+                if t + 1 < sequence_length:
+                    input_token = decoder_inputs[:, t + 1]
+
+            outputs = torch.stack(outputs, dim=1)
+            loss = criterion(
+                outputs.reshape(-1, outputs.size(-1)),
+                targets.reshape(-1),
+            )
             optimizer.zero_grad()
             loss.backward()
             # gradient clip
@@ -532,97 +499,49 @@ class TrainGradientDescentParent(TrainParent):
             # score
             labels_batch = labels_batch.detach().cpu()
 
-            # output_batch_logit = output_batch_logit.detach().cpu()
-            # labels_list.extend(labels_batch)
-            # outputs_logit_list.extend(output_batch_logit)
-            # predictions_batch = compute_prediction(output_batch_logit)
-            # probabilities_batch = compute_probability(output_batch_logit)
-            # batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
-            #     probabilities_batch, labels_batch, scores_functions_dict
-            # )
-            # # log
-            # if train_batch_log_threshold is not None and batch_index % train_batch_log_threshold == 0:
-            #     report = generate_report_per_batch(
-            #         batch_scores_dict=batch_scores_dict,
-            #         batch_loss=loss.item(),
-            #         batch_index=batch_index,
-            #         batches_num=train_batches_num,
-            #         split=SPLIT_TRAIN_NAME,
-            #     )
-            #     self._logger.info(report)
-            # if (
-            #     train_epoch_and_batch_sample_threshold is not None
-            #     and epoch_index % train_epoch_and_batch_sample_threshold[0] == 0
-            #     and batch_index % train_epoch_and_batch_sample_threshold[1] == 0
-            # ):
-            #     batch_size = images_batch.shape[0]
-            #     random_index = torch.randint(0, batch_size, (1,)).item()
-            #     sample = images_batch[random_index].detach()
-            #     sample_true_label = labels_batch[random_index].detach()
-            #     sample_predicted_label = predictions_batch[random_index]
-            #     channel_importance = compute_integrated_gradients(
-            #         model=model,
-            #         x=sample,
-            #         target_class=1,
-            #     )
-            #     channel_importance = channel_importance.detach().cpu()
-            #     if channel_importance.ndim == 2:
-            #         channel_importance = concatenate_hemispharer_based_separated_channels(
-            #             channel_importance[0],
-            #             channel_importance[1],
-            #         )
+            # compute scores
+            predictions_encoded = outputs.argmax(dim=1).detach().cpu()
+            predictions_encoded = clean_encoded_labels(predictions_encoded)
+            ground_truth = clean_encoded_labels(labels_batch_encoded.detach().cpu())
+            batch_scores_dict = compute_scores(
+                predictions=predictions_encoded,
+                ground_truth=ground_truth,
+                scores_functions_dict=scores_functions_dict,
+            )
+            batch_scores_dict_list.append(batch_scores_dict)
 
-            #     ch_names = dataloader_train.dataset.get_selected_channels()
-            #     channel_importance = channel_importance.numpy()
-            #     n_channels = len(channel_importance)
-            #     sorted_channel_indices = np.argsort(channel_importance)[::-1]
-            #     first_20_percent_count = int(np.ceil(0.20 * n_channels))
-            #     second_20_percent_count = int(np.ceil(0.20 * n_channels))
-            #     first_20_percent_indices = sorted_channel_indices[:first_20_percent_count]
-            #     second_20_percent_indices = sorted_channel_indices[first_20_percent_count : first_20_percent_count + second_20_percent_count]
+            # log
+            if train_batch_log_threshold is not None and batch_index % train_batch_log_threshold == 0:
+                report = generate_report_per_batch(
+                    batch_scores_dict=batch_scores_dict,
+                    batch_loss=loss.item(),
+                    batch_index=batch_index,
+                    batches_num=batches_num,
+                    split=SPLIT_TRAIN_NAME,
+                )
+                self._logger.info(report)
+            if (
+                train_epoch_and_batch_sample_threshold is not None
+                and epoch_index % train_epoch_and_batch_sample_threshold[0] == 0
+                and batch_index % train_epoch_and_batch_sample_threshold[1] == 0
+            ):
+                random_index = torch.randint(0, batch_size, (1,)).item()
+                sample_ground_truth = ground_truth[random_index].detach()
+                sample_predicted_label = predictions_encoded[random_index]
 
-            #     is_correct_prediction = sample_predicted_label == sample_true_label
-            #     if is_correct_prediction:
-            #         first_20_percent_counter = self._first_20_percent_channels_count_train_true_predictions
-            #         second_20_percent_counter = self._second_20_percent_channels_count_train_true_predictions
-            #         self._total_train_true_predictions_samples += 1
-            #     else:
-            #         first_20_percent_counter = self._first_20_percent_channels_count_train_false_predictions
-            #         second_20_percent_counter = self._second_20_percent_channels_count_train_false_predictions
-            #         self._total_train_false_predictions_samples += 1
+                print(f"Train sample index: {self._train_sample_index}")
+                print(f"Ground Truth: {index_to_letter_converter(sample_ground_truth)}")
+                print(f"Prediction :{index_to_letter_converter(sample_predicted_label)}")
+                self._train_sample_index += 1
 
-            #     for channel_index in first_20_percent_indices:
-            #         first_20_percent_counter[ch_names[channel_index]] += 1
-            #     for channel_index in second_20_percent_indices:
-            #         second_20_percent_counter[ch_names[channel_index]] += 1
-
-            #     VisualizerParent.visualize_channels_importance_on_2d_head(
-            #         channel_scores=channel_importance,
-            #         split=SPLIT_TRAIN_NAME,
-            #         file_name=self._train_sample_index,
-            #         montage_name=dataloader_train.dataset.get_montage_name(),
-            #         ch_names=dataloader_train.dataset.get_selected_channels(),
-            #         true_label=sample_true_label,
-            #         predicted_label=sample_predicted_label,
-            #         directory_to_save_figure=directory_to_save_samples,
-            #     )
-            #     self._train_sample_index += 1
-        avg_total_loss_train = sum(loss_batch_list) / train_batches_num
-        # outputs_logit_list = torch.stack(outputs_logit_list)
-        # labels_list = torch.stack(labels_list)
-        # predictions_epoch = compute_prediction(outputs_logit_list)
-        # probabilities_epoch = compute_probability(outputs_logit_list)
-        # epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
-        #     probabilities_epoch, labels_list, scores_functions_dict
-        # )
-        return avg_total_loss_train, None
-        # return avg_total_loss_train, epoch_scores_dict
+        avg_total_loss_train = sum(loss_batch_list) / batches_num
+        epoch_scores_dict = compute_scores_dict_list_avg(batch_scores_dict_list)
+        return avg_total_loss_train, epoch_scores_dict
 
     def __validation_function(
         self,
         model,
         dataloader_validation,
-        img_splits,
         criterion,
         scheduler,
         epoch_index,
@@ -631,132 +550,89 @@ class TrainGradientDescentParent(TrainParent):
         validation_batch_log_threshold,
         validation_epoch_and_batch_sample_threshold,
     ):
-        validation_batches_num = len(dataloader_validation)
-        with torch.no_grad():
-            model.eval()
-            W = next(iter(dataloader_validation))[0].shape[-1]
-            step = int(W / img_splits)
-            vocab_length = len(VOCAB_LETTERS_INDEXES_DICT)
-            batch_size = dataloader_validation.batch_size
+        batches_num = len(dataloader_validation)
+        model.eval()
 
-            loss_batch_list = []
-            labels_list = []
-            outputs_logit_list = []
+        batch_size = dataloader_validation.batch_size
 
-            for batch_index, (images_batch, labels_batch, labels_lengths_batch) in enumerate(dataloader_validation):
-                images_batch, labels_batch = images_batch.to(self._device), labels_batch.to(self._device)
-                hidden = torch.zeros((1, vocab_length)).double().to(self._device)
-                # output = get_one_hot_start_token(batch_size, vocab_length).to(self._device)
-                output = get_start_token(batch_size).to(self._device)
-                letters = []
-                for j in range(img_splits):
-                    output, hidden = model(images_batch[:, :, :, step * (img_splits - j - 1) : step * (img_splits - j)], output, hidden)
-                    letters.append(output)
+        loss_batch_list = []
+        batch_scores_dict_list = []
+        for batch_index, (images_batch, labels_batch, labels_lengths_batch) in enumerate(dataloader_validation):
+            images_batch = images_batch.to(self._device)
+            labels_batch_encoded = [letter_to_index_converter(label) for label in labels_batch]
+            labels_batch_encoded = torch.stack(labels_batch_encoded)
+            labels_batch_encoded = labels_batch_encoded.to(self._device)
 
-                predicted_word = torch.cat(letters, dim=1)
-                # predicted_word = torch.cat(letters, dim=1).view(img_splits, 1, vocab_length)
-                # predicted_word = torch.cat(letters, dim=1).view(img_splits, batch_size, vocab_length)
+            decoder_inputs = labels_batch_encoded[:, :-1]
+            targets = labels_batch_encoded[:, 1:]
 
-                # if batch_index % 1 == 0:
-                #     print(tensor_to_word(predicted_word))
-                #     print(indice_to_word(word.view((1, -1))[0]))
-                #     print(target_seq_len)
-                #     print("=" * 20)
+            features, hidden, padding_mask = model.encode(images_batch)
 
-                # compairing the output and word based on CTCLoss
-                loss = criterion(predicted_word, labels_batch, [img_splits] * batch_size, labels_lengths_batch)
-                # loss
-                loss_batch_list.append(loss.item())
+            # decode
+            outputs = []
+            sequence_length = decoder_inputs.size(1)
+            input_token = decoder_inputs[:, 0]
 
-                # # score
-                # labels_batch = labels_batch.cpu()
-                # output_batch_logit = output_batch_logit.cpu()
-                # labels_list.extend(labels_batch)
-                # outputs_logit_list.extend(output_batch_logit)
+            for t in range(sequence_length):
+                logits, hidden, _ = model.decode_step(
+                    features=features,
+                    input_token=input_token,
+                    hidden=hidden,
+                    padding_mask=padding_mask,
+                )
+                outputs.append(logits)
 
-                # predictions_batch = compute_prediction(output_batch_logit)
-                # probabilities_batch = compute_probability(output_batch_logit)
-                # batch_scores_dict = compute_prediction_based_scores(predictions_batch, labels_batch, scores_functions_dict) | compute_probability_based_scores(
-                #     probabilities_batch, labels_batch, scores_functions_dict
-                # )
-                # # log
-                # if validation_batch_log_threshold is not None and batch_index % validation_batch_log_threshold == 0:
-                #     report = generate_report_per_batch(
-                #         batch_scores_dict=batch_scores_dict,
-                #         batch_loss=loss.item(),
-                #         batch_index=batch_index,
-                #         batches_num=validation_batches_num,
-                #         split=SPLIT_VALIDATION_NAME,
-                #     )
-                #     self._logger.info(report)
-                # if (
-                #     validation_epoch_and_batch_sample_threshold is not None
-                #     and epoch_index % validation_epoch_and_batch_sample_threshold[0] == 0
-                #     and batch_index % validation_epoch_and_batch_sample_threshold[1] == 0
-                # ):
-                #     batch_size = images_batch.shape[0]
-                #     random_index = torch.randint(0, batch_size, (1,)).item()
-                #     sample = images_batch[random_index].detach()
-                #     sample_true_label = labels_batch[random_index].detach()
-                #     sample_predicted_label = predictions_batch[random_index]
-                #     channel_importance = compute_integrated_gradients(
-                #         model=model,
-                #         x=sample,
-                #         target_class=1,
-                #     )
-                #     channel_importance = channel_importance.detach().cpu()
-                #     if channel_importance.ndim == 2:
-                #         channel_importance = concatenate_hemispharer_based_separated_channels(
-                #             channel_importance[0],
-                #             channel_importance[1],
-                #         )
+                if t + 1 < sequence_length:
+                    input_token = decoder_inputs[:, t + 1]
 
-                #     ch_names = dataloader_validation.dataset.get_selected_channels()
-                #     channel_importance = channel_importance.numpy()
-                #     n_channels = len(channel_importance)
-                #     sorted_channel_indices = np.argsort(channel_importance)[::-1]
-                #     first_20_percent_count = int(np.ceil(0.20 * n_channels))
-                #     second_20_percent_count = int(np.ceil(0.20 * n_channels))
-                #     first_20_percent_indices = sorted_channel_indices[:first_20_percent_count]
-                #     second_20_percent_indices = sorted_channel_indices[first_20_percent_count : first_20_percent_count + second_20_percent_count]
+            outputs = torch.stack(outputs, dim=1)
+            loss = criterion(
+                outputs.reshape(-1, outputs.size(-1)),
+                targets.reshape(-1),
+            )
+            loss_batch_list.append(loss.item())
+            # score
+            labels_batch = labels_batch.detach().cpu()
 
-                #     is_correct_prediction = sample_predicted_label == sample_true_label
-                #     if is_correct_prediction:
-                #         first_20_percent_counter = self._first_20_percent_channels_count_validation_true_predictions
-                #         second_20_percent_counter = self._second_20_percent_channels_count_validation_true_predictions
-                #         self._total_validation_true_predictions_samples += 1
-                #     else:
-                #         first_20_percent_counter = self._first_20_percent_channels_count_validation_false_predictions
-                #         second_20_percent_counter = self._second_20_percent_channels_count_validation_false_predictions
-                #         self._total_validation_false_predictions_samples += 1
+            # compute scores
+            predictions_encoded = outputs.argmax(dim=1).detach().cpu()
+            predictions_encoded = clean_encoded_labels(predictions_encoded)
+            ground_truth = clean_encoded_labels(labels_batch_encoded.detach().cpu())
+            batch_scores_dict = compute_scores(
+                predictions=predictions_encoded,
+                ground_truth=ground_truth,
+                scores_functions_dict=scores_functions_dict,
+            )
+            batch_scores_dict_list.append(batch_scores_dict)
 
-                #     for channel_index in first_20_percent_indices:
-                #         first_20_percent_counter[ch_names[channel_index]] += 1
-                #     for channel_index in second_20_percent_indices:
-                #         second_20_percent_counter[ch_names[channel_index]] += 1
+            # log
+            if validation_batch_log_threshold is not None and batch_index % validation_batch_log_threshold == 0:
+                report = generate_report_per_batch(
+                    batch_scores_dict=batch_scores_dict,
+                    batch_loss=loss.item(),
+                    batch_index=batch_index,
+                    batches_num=batches_num,
+                    split=SPLIT_VALIDATION_NAME,
+                )
+                self._logger.info(report)
+            if (
+                validation_epoch_and_batch_sample_threshold is not None
+                and epoch_index % validation_epoch_and_batch_sample_threshold[0] == 0
+                and batch_index % validation_epoch_and_batch_sample_threshold[1] == 0
+            ):
+                random_index = torch.randint(0, batch_size, (1,)).item()
+                sample_ground_truth = ground_truth[random_index].detach()
+                sample_predicted_label = predictions_encoded[random_index]
 
-                #     VisualizerParent.visualize_channels_importance_on_2d_head(
-                #         channel_scores=channel_importance,
-                #         split=SPLIT_VALIDATION_NAME,
-                #         file_name=self._validation_sample_index,
-                #         montage_name=dataloader_validation.dataset.get_montage_name(),
-                #         ch_names=dataloader_validation.dataset.get_selected_channels(),
-                #         true_label=sample_true_label,
-                #         predicted_label=sample_predicted_label,
-                #         directory_to_save_figure=directory_to_save_samples,
-                #     )
-                #     self._validation_sample_index += 1
-            avg_total_loss_validation = sum(loss_batch_list) / validation_batches_num
-            # outputs_logit_list = torch.stack(outputs_logit_list)
-            # labels_list = torch.stack(labels_list)
-            # predictions_epoch = compute_prediction(outputs_logit_list)
-            # probabilities_epoch = compute_probability(outputs_logit_list)
-            # epoch_scores_dict = compute_prediction_based_scores(predictions_epoch, labels_list, scores_functions_dict) | compute_probability_based_scores(
-            #     probabilities_epoch, labels_list, scores_functions_dict
-            # )
-            if type(scheduler).__name__ == SCHEDULER_PLATEAU_NAME:
-                scheduler.step(avg_total_loss_validation)
-            else:
-                scheduler.step()
-            return avg_total_loss_validation, None
-            # return avg_total_loss_validation, epoch_scores_dict
+                print(f"Validation sample index: {self._validation_sample_index}")
+                print(f"Ground Truth: {index_to_letter_converter(sample_ground_truth)}")
+                print(f"Prediction :{index_to_letter_converter(sample_predicted_label)}")
+                self._validation_sample_index += 1
+
+        avg_total_loss_validation = sum(loss_batch_list) / batches_num
+        epoch_scores_dict = compute_scores_dict_list_avg(batch_scores_dict_list)
+        if type(scheduler).__name__ == SCHEDULER_PLATEAU_NAME:
+            scheduler.step(avg_total_loss_validation)
+        else:
+            scheduler.step()
+        return avg_total_loss_validation, epoch_scores_dict
